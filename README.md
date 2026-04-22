@@ -14,7 +14,19 @@ cargo run -p stardive -- api health
 
 ## Install the `stardive` CLI
 
-Install from crates.io:
+Recommended one-liner (downloads this repo script and runs it):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nmb4/stardive-api/main/installers/install-stardive.sh | bash
+```
+
+What this does:
+- uses the pkgx cURL bootstrap to create a temporary Rust toolchain environment
+- runs `cargo install stardive` in that temporary environment
+- installs only the final `stardive` binary to `/usr/local/bin/stardive` (uses `sudo` if needed)
+- does not require permanently installing pkgx or rustup on your system
+
+Direct crates.io install (if you already have Rust):
 
 ```bash
 cargo install stardive
