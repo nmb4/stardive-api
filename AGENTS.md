@@ -37,8 +37,8 @@ Use this only after the user explicitly approves publishing.
 ### Single release command
 - Script: `scripts/release-crates.sh`
 - Usage: `./scripts/release-crates.sh <x.y.z>`
-- The script requires typing an exact confirmation phrase:
-  - `CONFIRM RELEASE v<x.y.z>`
+- The script asks for a lightweight `y/N` confirmation prompt.
+- Pass `--yes` only when the user has already explicitly confirmed release in-thread.
 
 ### What the script does (all-in-one)
 1. Verifies clean git worktree and tag non-existence.

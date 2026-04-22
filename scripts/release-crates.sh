@@ -28,12 +28,12 @@ if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
   exit 1
 fi
 
-CONFIRM_PHRASE="CONFIRM RELEASE ${TAG}"
 if [[ "$AUTO_CONFIRM" != "--yes" ]]; then
   echo "About to release ${TAG}."
   echo "This will: bump versions, run tests/dry-run, create commit+tag, publish crates, push main+tag."
-  read -r -p "Type '${CONFIRM_PHRASE}' to continue: " response
-  if [[ "$response" != "$CONFIRM_PHRASE" ]]; then
+  read -r -p "Continue? [y/N]: " response
+  response="$(printf '%s' "$response" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$response" != "y" && "$response" != "yes" ]]; then
     echo "release cancelled" >&2
     exit 1
   fi
