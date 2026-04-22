@@ -1,0 +1,23 @@
+[package]
+name = "stardive"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Companion CLI for the Stardive API"
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+clap.workspace = true
+eframe.workspace = true
+egui.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+stardive-core = { path = "../stardive-core" }
+tokio.workspace = true
+
+[dev-dependencies]
+clap.workspace = true

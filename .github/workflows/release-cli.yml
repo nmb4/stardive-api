@@ -1,0 +1,21 @@
+name: release-cli
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "stardive-v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build CLI
+        run: cargo build --release -p stardive
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stardive-cli-linux
+          path: target/release/stardive

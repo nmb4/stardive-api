@@ -1,0 +1,307 @@
+#!/usr/bin/env sh
+# cox — run any crates.io binary ephemerally, like npx/bunx but for Rust
+# Requires: pkgx (https://pkgx.sh) — everything else is provisioned automatically
+#
+# Usage:
+#   cox <crate>[@version] [args...]
+#   cox ripgrep -- --version
+#   cox bat@0.24 src/main.rs
+#   cox tokei .
+#
+# Multi-binary crates (e.g. cargo-nextest which installs as "nextest"):
+#   cox cargo-nextest/nextest run
+#   (first time: lists available binaries if name doesn't match crate name)
+#
+# Options via env vars:
+#   COX_CACHE_DIR   where cox caches installed binaries  (default: ~/.cache/cox)
+#   COX_VERBOSE=1   print internal steps to stderr
+#   COX_FORCE=1     re-install even if already cached
+
+set -e
+
+COX_CACHE_DIR="${COX_CACHE_DIR:-${HOME}/.cache/cox}"
+COX_VERBOSE="${COX_VERBOSE:-0}"
+COX_FORCE="${COX_FORCE:-0}"
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+_log() { [ "${COX_VERBOSE}" = "1" ] && printf '\033[2m[cox] %s\033[0m\n' "$*" >&2 || true; }
+_info() { printf '\033[36m[cox] %s\033[0m\n' "$*" >&2; }
+_err()  { printf '\033[31m[cox error] %s\033[0m\n' "$*" >&2; }
+
+# ── 0. usage ──────────────────────────────────────────────────────────────────
+
+if [ $# -eq 0 ]; then
+  cat >&2 <<'USAGE'
+cox — run any crates.io binary ephemerally, like npx/bunx but for Rust
+Requires only: pkgx (https://pkgx.sh)
+
+  Usage:
+    cox <crate>[@version] [args...]
+    cox <crate>/<binary>[@version] [args...]   ← for multi-binary crates
+
+  Examples:
+    cox ripgrep -- --help
+    cox bat@0.24 src/main.rs
+    cox tokei .
+    cox hyperfine "sleep 0.1"
+    cox cargo-nextest/cargo-nextest run
+
+  Env vars:
+    COX_CACHE_DIR   binary cache dir  (default: ~/.cache/cox)
+    COX_VERBOSE=1   verbose output
+    COX_FORCE=1     force re-install
+
+USAGE
+  exit 1
+fi
+
+# ── 1. ensure pkgx is present ─────────────────────────────────────────────────
+
+if ! command -v pkgx >/dev/null 2>&1; then
+  _err "pkgx is not installed — cox requires it to provision the Rust toolchain."
+  _err "Install with:  curl https://pkgx.sh | sh"
+  _err "           or: brew install pkgx"
+  exit 1
+fi
+
+# ── 2. parse crate arg ────────────────────────────────────────────────────────
+# Supported forms:
+#   bat               → crate=bat,    binary=bat,    version=latest
+#   bat@0.24          → crate=bat,    binary=bat,    version=0.24
+#   cargo-nextest/cargo-nextest       → crate=cargo-nextest, binary=cargo-nextest
+#   cargo-nextest/cargo-nextest@0.9   → with version
+
+crate_arg="$1"; shift
+
+# Split optional explicit binary override (slash syntax)
+explicit_binary=""
+if printf '%s' "${crate_arg}" | grep -q '/'; then
+  explicit_binary="${crate_arg#*/}"
+  crate_arg="${crate_arg%%/*}"
+  # version may be on the binary part: nextest@0.9
+  if printf '%s' "${explicit_binary}" | grep -q '@'; then
+    crate_version="${explicit_binary#*@}"
+    explicit_binary="${explicit_binary%%@*}"
+  fi
+fi
+
+# Split version from crate: bat@0.24
+crate_name="${crate_arg%%@*}"
+if [ -z "${crate_version:-}" ] && printf '%s' "${crate_arg}" | grep -q '@'; then
+  crate_version="${crate_arg#*@}"
+fi
+
+_log "crate_name='${crate_name}' crate_version='${crate_version:-latest}' explicit_binary='${explicit_binary:-<auto>}'"
+
+# ── 3. provision Rust toolchain from pkgx ─────────────────────────────────────
+
+_log "Requesting Rust toolchain from pkgx..."
+
+# pkgx +pkg outputs lines like:
+#   PATH="/home/user/.pkgx/rust-lang.org/v1.82.0/bin:/home/user/.pkgx/llvm.org/v18.1.8/bin:…:$PATH"
+#   CARGO_HOME="/home/user/.pkgx/rust-lang.org/v1.82.0"
+# We eval them in a controlled way — only updating PATH and capturing CARGO_HOME.
+
+pkgx_dump=$(pkgx +rust.lang.org 2>/dev/null) || {
+  _err "pkgx could not provision the Rust toolchain."
+  _err "Try manually: pkgx +rust.lang.org"
+  exit 1
+}
+
+# Extract the PATH value from the dump, then distill only the *new* directories
+# that pkgx prepended (i.e. not already in $PATH).
+raw_pkgx_path=$(printf '%s\n' "${pkgx_dump}" | grep '^PATH=' | head -1 \
+  | sed 's/^PATH=//;s/^"//;s/"$//')
+
+if [ -z "${raw_pkgx_path}" ]; then
+  _err "pkgx env dump did not contain a PATH line. Raw output:"
+  printf '%s\n' "${pkgx_dump}" >&2
+  exit 1
+fi
+
+# Build a prefix of only the new path entries pkgx added
+pkgx_new_paths=""
+OLD_IFS="${IFS}"; IFS=:
+for dir in ${raw_pkgx_path}; do
+  case ":${PATH}:" in
+    *":${dir}:"*) ;;   # already in PATH — skip
+    *) [ -n "${dir}" ] && pkgx_new_paths="${pkgx_new_paths}${dir}:" ;;
+  esac
+done
+IFS="${OLD_IFS}"
+pkgx_new_paths="${pkgx_new_paths%:}"  # strip trailing colon
+
+_log "pkgx-provided bin dirs: ${pkgx_new_paths}"
+
+# Also capture CARGO_HOME / RUSTUP_HOME if pkgx sets them
+for var in CARGO_HOME RUSTUP_HOME RUSTUP_TOOLCHAIN; do
+  val=$(printf '%s\n' "${pkgx_dump}" | grep "^${var}=" | head -1 \
+    | sed "s/^${var}=//;s/^\"//;s/\"$//") || true
+  [ -n "${val}" ] && export "${var}=${val}" && _log "pkgx set ${var}=${val}"
+done
+
+# ── 4. determine install root ─────────────────────────────────────────────────
+
+if [ -n "${crate_version:-}" ]; then
+  cache_key="${crate_name}@${crate_version}"
+else
+  cache_key="${crate_name}"
+fi
+
+install_root="${COX_CACHE_DIR}/${cache_key}"
+bin_dir="${install_root}/bin"
+
+# Combine pkgx bins + our per-crate bin_dir into a working PATH for all cargo calls
+COX_EXEC_PATH="${pkgx_new_paths}:${bin_dir}:${PATH}"
+
+# ── 5. install if not cached ──────────────────────────────────────────────────
+
+needs_install=1
+if [ "${COX_FORCE}" != "1" ] && [ -d "${bin_dir}" ]; then
+  found=$(find "${bin_dir}" -maxdepth 1 -type f -perm /111 2>/dev/null | head -1)
+  [ -n "${found}" ] && needs_install=0
+fi
+
+if [ "${needs_install}" = "1" ]; then
+  mkdir -p "${install_root}"
+
+  # ── 5a. bootstrap cargo-binstall (cached in its own slot) ─────────────────
+
+  binstall_root="${COX_CACHE_DIR}/_tools/cargo-binstall"
+  binstall_bin="${binstall_root}/bin/cargo-binstall"
+
+  if [ ! -x "${binstall_bin}" ]; then
+    _info "Bootstrapping cargo-binstall (once)..."
+    mkdir -p "${binstall_root}"
+    env PATH="${COX_EXEC_PATH}" \
+      cargo install cargo-binstall \
+        --root "${binstall_root}" \
+        --quiet \
+    || {
+      _log "cargo-binstall bootstrap failed — will use plain cargo install"
+      binstall_bin=""
+    }
+  fi
+
+  # ── 5b. try binstall first (downloads pre-built binary — fast) ────────────
+
+  installed_ok=0
+
+  if [ -x "${binstall_bin}" ]; then
+    _info "Installing '${cache_key}' via cargo-binstall..."
+    version_flag=""
+    [ -n "${crate_version:-}" ] && version_flag="--version ${crate_version}"
+
+    # binstall_bin needs to see cargo on PATH for some fallback strategies
+    env PATH="${pkgx_new_paths}:${binstall_root}/bin:${PATH}" \
+      "${binstall_bin}" "${crate_name}" \
+        --root "${install_root}" \
+        --no-confirm \
+        --quiet \
+        ${version_flag} 2>&1 \
+    && installed_ok=1 \
+    || _log "cargo-binstall failed, falling back to source compilation..."
+  fi
+
+  # ── 5c. fall back to cargo install (compiles from source) ─────────────────
+
+  if [ "${installed_ok}" = "0" ]; then
+    _info "Compiling '${cache_key}' from source (this may take a while)..."
+    version_flag=""
+    [ -n "${crate_version:-}" ] && version_flag="--version ${crate_version}"
+
+    env PATH="${COX_EXEC_PATH}" \
+      cargo install "${crate_name}" \
+        --root "${install_root}" \
+        --quiet \
+        ${version_flag} \
+    || {
+      _err "Installation of '${crate_name}' failed."
+      _err "Possible causes:"
+      _err "  • Missing system library (OpenSSL, cmake, pkg-config, etc.)"
+      _err "  • Crate name does not exist on crates.io"
+      _err "  • Version '${crate_version:-latest}' does not exist"
+      _err ""
+      _err "Debug with: COX_VERBOSE=1 cox ${cache_key}"
+      _err "Or manually: env PATH=\"${pkgx_new_paths}:\$PATH\" cargo install ${crate_name} ${version_flag}"
+      rm -rf "${install_root}"
+      exit 1
+    }
+  fi
+
+  _info "Installed '${cache_key}' → ${bin_dir}"
+fi
+
+# ── 6. discover installed binaries ────────────────────────────────────────────
+
+all_bins=$(find "${bin_dir}" -maxdepth 1 -type f -perm /111 2>/dev/null | sort)
+
+if [ -z "${all_bins}" ]; then
+  _err "No executable binaries found in ${bin_dir}."
+  _err "The crate '${crate_name}' may be a library-only crate (no [[bin]] targets)."
+  exit 1
+fi
+
+bin_count=$(printf '%s\n' "${all_bins}" | grep -c . || true)
+all_bin_names=$(printf '%s\n' "${all_bins}" | xargs -I{} basename {})
+_log "Found ${bin_count} binary(ies): $(printf '%s ' ${all_bin_names})"
+
+# ── 7. select target binary ───────────────────────────────────────────────────
+
+target_bin=""
+
+if [ -n "${explicit_binary}" ]; then
+  # User specified an explicit binary name via slash syntax
+  candidate="${bin_dir}/${explicit_binary}"
+  if [ -x "${candidate}" ]; then
+    target_bin="${candidate}"
+  else
+    _err "Explicit binary '${explicit_binary}' not found in ${bin_dir}"
+    _err "Available: ${all_bin_names}"
+    exit 1
+  fi
+
+elif [ "${bin_count}" = "1" ]; then
+  # Exactly one binary — use it unconditionally, regardless of name
+  target_bin="${all_bins}"
+
+else
+  # Multiple binaries — try to pick the best match:
+  # 1. exact match on crate name
+  # 2. single binary that starts with crate name
+  for b in ${all_bins}; do
+    bname=$(basename "$b")
+    if [ "${bname}" = "${crate_name}" ]; then
+      target_bin="$b"
+      break
+    fi
+  done
+
+  if [ -z "${target_bin}" ]; then
+    # Try prefix match (e.g. crate "cargo-nextest" installing "nextest")
+    for b in ${all_bins}; do
+      bname=$(basename "$b")
+      if printf '%s' "${bname}" | grep -q "^${crate_name}"; then
+        target_bin="$b"
+        break
+      fi
+    done
+  fi
+
+  if [ -z "${target_bin}" ]; then
+    _err "Multiple binaries found for '${crate_name}' — can't auto-select:"
+    for b in ${all_bins}; do
+      printf '  cox %s/%s [args...]\n' "${cache_key}" "$(basename "$b")" >&2
+    done
+    _err ""
+    _err "Re-run with the specific binary you want, e.g.:"
+    _err "  cox ${crate_name}/$(printf '%s\n' "${all_bins}" | head -1 | xargs basename) [args...]"
+    exit 1
+  fi
+fi
+
+# ── 8. exec ───────────────────────────────────────────────────────────────────
+
+_log "exec: $(basename "${target_bin}") $*"
+exec env PATH="${COX_EXEC_PATH}" "${target_bin}" "$@"
