@@ -1,6 +1,10 @@
 mod gui;
 
-use std::path::PathBuf;
+use std::{
+    collections::BTreeSet,
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
+};
 
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand, ValueEnum};
@@ -28,6 +32,7 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    Update,
     Api {
         #[command(subcommand)]
         command: ApiCommands,
@@ -128,6 +133,11 @@ impl From<RenderFormatArg> for RenderFormat {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    if let Commands::Update = cli.command {
+        return run_update();
+    }
+
     let cfg = resolve_cli_config(cli.base_url, cli.api_key)?;
     let api = StardiveClient::new(cfg.base_url.clone(), cfg.api_key.clone());
 
@@ -217,9 +227,312 @@ async fn main() -> Result<()> {
                 println!("saved to {}", output.display());
             }
         },
+        Commands::Update => unreachable!("handled before api client initialization"),
     }
 
     Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum InstallMethod {
+    CratesIo,
+    Pkgx,
+    ScriptOrUnknown,
+}
+
+impl InstallMethod {
+    fn label(self) -> &'static str {
+        match self {
+            Self::CratesIo => "crates.io",
+            Self::Pkgx => "pkgx",
+            Self::ScriptOrUnknown => "script/unknown",
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+struct InstallDetection {
+    crates_paths: BTreeSet<PathBuf>,
+    pkgx_paths: BTreeSet<PathBuf>,
+    script_paths: BTreeSet<PathBuf>,
+    cargo_reports_install: bool,
+    pkgx_reports_install: bool,
+}
+
+impl InstallDetection {
+    fn add_path(&mut self, path: PathBuf, method: InstallMethod) {
+        match method {
+            InstallMethod::CratesIo => {
+                self.crates_paths.insert(path);
+            }
+            InstallMethod::Pkgx => {
+                self.pkgx_paths.insert(path);
+            }
+            InstallMethod::ScriptOrUnknown => {
+                self.script_paths.insert(path);
+            }
+        }
+    }
+
+    fn available_methods(&self) -> BTreeSet<InstallMethod> {
+        let mut methods = BTreeSet::new();
+        if self.cargo_reports_install || !self.crates_paths.is_empty() {
+            methods.insert(InstallMethod::CratesIo);
+        }
+        if self.pkgx_reports_install || !self.pkgx_paths.is_empty() {
+            methods.insert(InstallMethod::Pkgx);
+        }
+        if !self.script_paths.is_empty() {
+            methods.insert(InstallMethod::ScriptOrUnknown);
+        }
+        if methods.is_empty() {
+            methods.insert(InstallMethod::ScriptOrUnknown);
+        }
+        methods
+    }
+}
+
+fn run_update() -> Result<()> {
+    let detection = detect_install_variants();
+    print_detected_variants(&detection);
+
+    let methods = detection.available_methods();
+    let preferred = select_preferred_method(&methods);
+    println!("selected update method: {}", preferred.label());
+
+    match preferred {
+        InstallMethod::CratesIo => update_via_crates_io(),
+        InstallMethod::Pkgx => update_via_pkgx(&detection),
+        InstallMethod::ScriptOrUnknown => update_via_script(),
+    }
+}
+
+fn detect_install_variants() -> InstallDetection {
+    let mut detection = InstallDetection::default();
+    let mut candidates = BTreeSet::new();
+
+    if let Ok(exe) = std::env::current_exe() {
+        candidates.insert(exe);
+    }
+
+    if let Some(path_var) = std::env::var_os("PATH") {
+        for dir in std::env::split_paths(&path_var) {
+            let candidate = dir.join(binary_name());
+            if candidate.exists() {
+                candidates.insert(candidate);
+            }
+        }
+    }
+
+    if let Some(home) = user_home_dir() {
+        candidates.insert(home.join(".cargo").join("bin").join(binary_name()));
+        candidates.insert(home.join(".local").join("bin").join(binary_name()));
+    }
+    candidates.insert(PathBuf::from("/usr/local/bin").join(binary_name()));
+
+    for candidate in candidates {
+        if !candidate.exists() {
+            continue;
+        }
+        let method = classify_install_method(&candidate);
+        detection.add_path(candidate, method);
+    }
+
+    detection.cargo_reports_install = detect_cargo_installation();
+    detection.pkgx_reports_install = detect_pkgx_installation();
+
+    detection
+}
+
+fn print_detected_variants(detection: &InstallDetection) {
+    if !detection.crates_paths.is_empty() {
+        println!("detected crates.io installs:");
+        for path in &detection.crates_paths {
+            println!("  - {}", path.display());
+        }
+    }
+    if !detection.pkgx_paths.is_empty() || detection.pkgx_reports_install {
+        println!("detected pkgx installs:");
+        for path in &detection.pkgx_paths {
+            println!("  - {}", path.display());
+        }
+        if detection.pkgx_reports_install && detection.pkgx_paths.is_empty() {
+            println!("  - reported by `pkgx pkgm list`");
+        }
+    }
+    if !detection.script_paths.is_empty() {
+        println!("detected script/unknown installs:");
+        for path in &detection.script_paths {
+            println!("  - {}", path.display());
+        }
+    }
+}
+
+fn select_preferred_method(methods: &BTreeSet<InstallMethod>) -> InstallMethod {
+    if methods.contains(&InstallMethod::CratesIo) {
+        return InstallMethod::CratesIo;
+    }
+    if methods.contains(&InstallMethod::Pkgx) {
+        return InstallMethod::Pkgx;
+    }
+    InstallMethod::ScriptOrUnknown
+}
+
+fn classify_install_method(path: &Path) -> InstallMethod {
+    if let Ok(canon) = std::fs::canonicalize(path) {
+        let classified = classify_path_like(&canon);
+        if classified != InstallMethod::ScriptOrUnknown {
+            return classified;
+        }
+    }
+    classify_path_like(path)
+}
+
+fn classify_path_like(path: &Path) -> InstallMethod {
+    let s = path.to_string_lossy().to_lowercase();
+    if s.contains("/.cargo/bin/") || s.contains("\\.cargo\\bin\\") {
+        return InstallMethod::CratesIo;
+    }
+    if s.contains("/.pkgx/")
+        || s.contains("\\.pkgx\\")
+        || s.contains("/pkgm/")
+        || s.contains("\\pkgm\\")
+    {
+        return InstallMethod::Pkgx;
+    }
+    InstallMethod::ScriptOrUnknown
+}
+
+fn detect_cargo_installation() -> bool {
+    if !command_exists("cargo") {
+        return false;
+    }
+    let output = Command::new("cargo")
+        .args(["install", "--list"])
+        .output()
+        .ok();
+    let Some(output) = output else {
+        return false;
+    };
+    if !output.status.success() {
+        return false;
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    stdout
+        .lines()
+        .any(|line| line.trim_start().starts_with("stardive v"))
+}
+
+fn detect_pkgx_installation() -> bool {
+    if !command_exists("pkgx") {
+        return false;
+    }
+    let output = Command::new("pkgx").args(["pkgm", "list"]).output().ok();
+    let Some(output) = output else {
+        return false;
+    };
+    if !output.status.success() {
+        return false;
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    stdout.lines().any(|line| {
+        let trimmed = line.trim();
+        trimmed.starts_with("stardive ") || trimmed == "stardive"
+    })
+}
+
+fn update_via_crates_io() -> Result<()> {
+    if command_exists("cargo") {
+        run_command_streaming("cargo", &["install", "--locked", "--force", "stardive"])?;
+    } else {
+        run_bash_command(
+            "eval \"$(sh <(curl -fsS https://pkgx.sh) +rust-lang.org +curl.se)\" && cargo install --locked --force stardive",
+        )?;
+    }
+    println!("update completed via crates.io");
+    Ok(())
+}
+
+fn update_via_pkgx(detection: &InstallDetection) -> Result<()> {
+    if !command_exists("pkgx") {
+        println!("pkgx not available; falling back to script installer");
+        return update_via_script();
+    }
+
+    let needs_sudo = detection
+        .pkgx_paths
+        .iter()
+        .any(|path| path.starts_with("/usr/local/bin") || path.starts_with("/usr/bin"));
+
+    if needs_sudo {
+        if command_exists("sudo") {
+            run_command_streaming("sudo", &["pkgx", "pkgm", "install", "stardive"])?;
+        } else {
+            run_command_streaming("pkgx", &["pkgm", "install", "stardive"])?;
+        }
+    } else {
+        run_command_streaming("pkgx", &["pkgm", "install", "stardive"])?;
+    }
+
+    println!("update completed via pkgx");
+    Ok(())
+}
+
+fn update_via_script() -> Result<()> {
+    run_bash_command(
+        "curl -fsSL https://raw.githubusercontent.com/nmb4/stardive-api/main/installers/install-stardive.sh | bash",
+    )?;
+    println!("update completed via script installer");
+    Ok(())
+}
+
+fn run_bash_command(command: &str) -> Result<()> {
+    run_command_streaming("bash", &["-lc", command])
+}
+
+fn run_command_streaming(program: &str, args: &[&str]) -> Result<()> {
+    let status = Command::new(program)
+        .args(args)
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .status()
+        .with_context(|| format!("failed to start `{program}`"))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(anyhow!(
+            "`{}` exited with status {}",
+            format!("{program} {}", args.join(" ")).trim(),
+            status
+        ))
+    }
+}
+
+fn command_exists(name: &str) -> bool {
+    std::env::var_os("PATH")
+        .map(|path_var| {
+            std::env::split_paths(&path_var).any(|dir| {
+                let candidate = dir.join(name);
+                candidate.exists()
+            })
+        })
+        .unwrap_or(false)
+}
+
+fn user_home_dir() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("USERPROFILE").map(PathBuf::from))
+}
+
+fn binary_name() -> &'static str {
+    if cfg!(windows) {
+        "stardive.exe"
+    } else {
+        "stardive"
+    }
 }
 
 async fn upload_file(
@@ -333,5 +646,28 @@ mod tests {
         let headers = auth_header_map(Some("secret")).expect("headers");
         let auth = headers.get(AUTHORIZATION).expect("auth header");
         assert_eq!(auth.to_str().expect("str"), "Bearer secret");
+    }
+
+    #[test]
+    fn update_method_priority_prefers_crates() {
+        let mut methods = BTreeSet::new();
+        methods.insert(InstallMethod::ScriptOrUnknown);
+        methods.insert(InstallMethod::Pkgx);
+        methods.insert(InstallMethod::CratesIo);
+        assert_eq!(select_preferred_method(&methods), InstallMethod::CratesIo);
+    }
+
+    #[test]
+    fn update_method_priority_prefers_pkgx_over_script() {
+        let mut methods = BTreeSet::new();
+        methods.insert(InstallMethod::ScriptOrUnknown);
+        methods.insert(InstallMethod::Pkgx);
+        assert_eq!(select_preferred_method(&methods), InstallMethod::Pkgx);
+    }
+
+    #[test]
+    fn classify_cargo_path_as_crates() {
+        let method = classify_path_like(Path::new("/home/me/.cargo/bin/stardive"));
+        assert_eq!(method, InstallMethod::CratesIo);
     }
 }

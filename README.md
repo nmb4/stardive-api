@@ -88,6 +88,12 @@ cargo run -p stardive -- --help
 - `stardive file download <id> --output <path>`
 - `stardive file gui`
 - `stardive render snippet --code \"...\" --format svg --output out.svg`
+- `stardive update`
+
+`stardive update` detects install variants and picks an update strategy in this order:
+1. crates.io install (`cargo install`) if detected
+2. native pkgx install (`pkgx pkgm install`) if detected
+3. script/unknown fallback (re-runs the GitHub installer one-liner)
 
 ## crates.io publish readiness
 
