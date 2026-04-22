@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use app_state::AppState;
-use axum::{Router, extract::DefaultBodyLimit, middleware};
+use axum::{Router, extract::DefaultBodyLimit, http::StatusCode, middleware, routing::get};
 use command_runner::SystemCommandRunner;
 use config::ServerConfig;
 use file_store::FileStore;
@@ -57,7 +57,9 @@ async fn main() -> anyhow::Result<()> {
             auth::auth_middleware,
         ));
 
-    let app = Router::new().nest("/v1", v1.with_state(state.clone()));
+    let app = Router::new()
+        .route("/up", get(up))
+        .nest("/v1", v1.with_state(state.clone()));
 
     let listener = tokio::net::TcpListener::bind(config.bind_addr)
         .await
@@ -68,4 +70,8 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("api server stopped unexpectedly")?;
     Ok(())
+}
+
+async fn up() -> StatusCode {
+    StatusCode::OK
 }

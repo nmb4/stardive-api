@@ -48,11 +48,7 @@ async fn search_text(
     Json(payload): Json<SearchRequest>,
 ) -> ApiResult<Json<SearchResponse>> {
     validate_search_request(&payload)?;
-    let mut args = vec![
-        "text".to_string(),
-        "-q".to_string(),
-        payload.query.clone(),
-    ];
+    let mut args = vec!["text".to_string(), "-q".to_string(), payload.query.clone()];
     apply_search_options(&payload, &mut args);
     let results = run_ddgs_json(&state, args).await?;
     Ok(Json(SearchResponse { results }))
@@ -63,11 +59,7 @@ async fn search_news(
     Json(payload): Json<SearchRequest>,
 ) -> ApiResult<Json<SearchResponse>> {
     validate_search_request(&payload)?;
-    let mut args = vec![
-        "news".to_string(),
-        "-q".to_string(),
-        payload.query.clone(),
-    ];
+    let mut args = vec!["news".to_string(), "-q".to_string(), payload.query.clone()];
     apply_search_options(&payload, &mut args);
     let results = run_ddgs_json(&state, args).await?;
     Ok(Json(SearchResponse { results }))

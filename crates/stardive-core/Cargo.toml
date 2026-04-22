@@ -5,6 +5,12 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
+description = "Shared contracts, config, and HTTP client for Stardive API tooling"
+readme = "README.md"
+homepage = "https://github.com/nmb4/stardive-api"
+documentation = "https://docs.rs/stardive-core"
+keywords = ["stardive", "api", "sdk"]
+categories = ["api-bindings", "config"]
 
 [dependencies]
 anyhow.workspace = true

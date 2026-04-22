@@ -18,7 +18,8 @@ pub async fn auth_middleware(
         None => return next.run(request).await,
     };
 
-    if request.uri().path().ends_with("/health") {
+    let path = request.uri().path();
+    if path == "/up" || path.ends_with("/health") {
         return next.run(request).await;
     }
 

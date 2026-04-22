@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+set -eu
+# Optional ONCE hook. Returning success means restore cleanup is complete.
+exit 0

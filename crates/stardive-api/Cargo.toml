@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
+publish = false
 
 [dependencies]
 anyhow.workspace = true
@@ -16,7 +17,7 @@ http.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
-stardive-core = { path = "../stardive-core" }
+stardive-core = { version = "0.1.0", path = "../stardive-core" }
 tempfile.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

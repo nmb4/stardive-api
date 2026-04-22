@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use anyhow::{Context, Result, anyhow};
 use eframe::{App, Frame, NativeOptions, egui};
 use reqwest::blocking::multipart::{Form, Part};
-use serde_json::Value;
 use stardive_core::types::FileListResponse;
 
 pub fn run_file_gui(base_url: String, api_key: Option<String>) -> Result<()> {
@@ -204,6 +203,6 @@ mod tests {
 
     #[test]
     fn value_type_is_available_for_future_gui_extensions() {
-        let _v = Value::Null;
+        let _v = serde_json::Value::Null;
     }
 }

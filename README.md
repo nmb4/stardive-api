@@ -12,8 +12,29 @@ cargo run -p stardive-api
 cargo run -p stardive -- api health
 ```
 
-## API endpoints (`/v1`)
+## Install the `stardive` CLI
 
+Install from crates.io:
+
+```bash
+cargo install stardive
+```
+
+Local fallback from this repository:
+
+```bash
+cargo install --path crates/stardive
+```
+
+Run local without installing:
+
+```bash
+cargo run -p stardive -- --help
+```
+
+## API endpoints
+
+- `GET /up` (top-level health endpoint for ONCE/Kamal-style checks)
 - `GET /health`
 - `POST /search/text`
 - `POST /search/news`
@@ -56,7 +77,56 @@ cargo run -p stardive -- api health
 - `stardive file gui`
 - `stardive render snippet --code \"...\" --format svg --output out.svg`
 
+## crates.io publish readiness
+
+This workspace is set up to publish the CLI in two steps:
+
+1. Publish shared core crate:
+
+```bash
+cargo publish -p stardive-core
+```
+
+2. Publish companion CLI crate:
+
+```bash
+cargo publish -p stardive
+```
+
+Local packaging checks before publish:
+
+```bash
+cargo package -p stardive-core
+cargo package -p stardive
+```
+
 ## Static content
 
 - `installers/`: shell scripts served via `/v1/installers`
 - `eternal/`: static long-lived resources served via `/v1/eternal`
+
+## ONCE-compatible Docker image
+
+According to ONCE compatibility requirements, the app image must:
+- serve HTTP on port `80`
+- expose a successful health endpoint at `/up`
+- persist data in `/storage`
+
+This repo includes a `Dockerfile` that does this by default.
+
+Build:
+
+```bash
+docker build -t ghcr.io/YOUR_USER/stardive-api:latest .
+```
+
+Run:
+
+```bash
+docker run --rm \
+  -p 80:80 \
+  -v stardive-storage:/storage \
+  ghcr.io/YOUR_USER/stardive-api:latest
+```
+
+Optional ONCE backup hooks are included at `/hooks/pre-backup` and `/hooks/post-restore`.

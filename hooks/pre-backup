@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+set -eu
+# Optional ONCE hook. Returning success means backups can proceed.
+exit 0
