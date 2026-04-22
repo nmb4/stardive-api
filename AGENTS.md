@@ -24,3 +24,33 @@ Add new API capabilities as isolated modules with explicit contracts and tests.
 - New routes appear under `/v1`.
 - Health endpoint reports module capability status.
 - CLI compatibility considered (`stardive-core` types updated when needed).
+
+## Release workflow (confirmation-gated)
+
+Use this only after the user explicitly approves publishing.
+
+### Semver bump rules
+- Patch (`x.y.Z`) for bug fixes, refactors without public API break.
+- Minor (`x.Y.z`) for new backward-compatible features.
+- Major (`X.y.z`) for breaking public API/CLI behavior.
+
+### Single release command
+- Script: `scripts/release-crates.sh`
+- Usage: `./scripts/release-crates.sh <x.y.z>`
+- The script requires typing an exact confirmation phrase:
+  - `CONFIRM RELEASE v<x.y.z>`
+
+### What the script does (all-in-one)
+1. Verifies clean git worktree and tag non-existence.
+2. Bumps version in workspace `Cargo.toml`.
+3. Syncs `stardive-core` dependency versions in crate manifests.
+4. Runs `cargo test --workspace --all-targets`.
+5. Runs `cargo publish --dry-run --workspace --exclude stardive-api`.
+6. Creates release commit `chore(release): v<x.y.z>` and annotated tag `v<x.y.z>`.
+7. Publishes crates in order:
+   - `stardive-core`
+   - `stardive` (with retry loop for index propagation)
+8. Pushes `main` and the tag to GitHub.
+
+### Agent safety rule
+- Never run the release script (or manual publish/tag sequence) unless the user gives explicit release confirmation in the current thread.
