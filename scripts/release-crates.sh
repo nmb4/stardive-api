@@ -48,7 +48,7 @@ perl -i -pe 's/stardive-core = \{ version = "[^"]+", path = "\.\.\/stardive-core
 
 # refresh lockfile and validate
 cargo test --workspace --all-targets
-cargo publish --dry-run --workspace --exclude stardive-api
+cargo publish --dry-run --workspace --exclude stardive-api --allow-dirty
 
 git add Cargo.toml Cargo.lock crates/stardive/Cargo.toml crates/stardive-api/Cargo.toml
 git commit -m "chore(release): ${TAG}"
