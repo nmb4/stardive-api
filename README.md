@@ -20,6 +20,12 @@ Recommended one-liner (downloads this repo script and runs it):
 curl -fsSL https://raw.githubusercontent.com/nmb4/stardive-api/main/installers/install-stardive.sh | bash
 ```
 
+PowerShell (Windows):
+
+```powershell
+irm https://raw.githubusercontent.com/nmb4/stardive-api/main/installers/install-stardive.ps1 | iex
+```
+
 What this does:
 - uses the pkgx cURL bootstrap to create a temporary Rust toolchain environment
 - runs `cargo install stardive` in that temporary environment
