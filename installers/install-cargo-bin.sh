@@ -7,15 +7,16 @@ set -euo pipefail
 # Usage:
 #   ./install-cargo-bin.sh --crate stardive
 #   ./install-cargo-bin.sh --crate stardive --version 0.1.0
+#   ./install-cargo-bin.sh --source github --repo stardive/stardive-api
+#   ./install-cargo-bin.sh --source github --repo stardive/stardive-api --version 0.1.0
 #   ./install-cargo-bin.sh --source github --repo stardive/stardive-api --crate stardive
-#   ./install-cargo-bin.sh --source github --repo stardive/stardive-api --crate stardive --version 0.1.0
 #   ./install-cargo-bin.sh --crate ripgrep --install-dir ~/.local/bin
 #
 # All binaries the crate produces are installed automatically.
 #
 # Flags:
 #   --source <crate|github>  Source to install from         (default: crate)
-#   --crate <name>           Crate name                     (required)
+#   --crate <name>           Crate/package name             (required for --source crate)
 #   --repo <owner/repo>      GitHub repo in owner/repo form (required when --source github)
 #   --version <x.y.z>        Version or git tag             (default: latest)
 #   --install-dir <path>     Where to place the binary      (default: /usr/local/bin)
@@ -64,14 +65,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ── validate ────────────────────────────────────────────────────────
-if [[ -z "$TOOL_CRATE" ]]; then
-    echo "error: --crate <name> is required" >&2
+if [[ "$TOOL_SOURCE" != "crate" && "$TOOL_SOURCE" != "github" ]]; then
+    echo "error: --source must be 'crate' or 'github'" >&2
     exit 1
 fi
 
-if [[ "$TOOL_SOURCE" != "crate" && "$TOOL_SOURCE" != "github" ]]; then
-    echo "error: --source must be 'crate' or 'github'" >&2
+if [[ "$TOOL_SOURCE" == "crate" && -z "$TOOL_CRATE" ]]; then
+    echo "error: --crate <name> is required when --source crate" >&2
     exit 1
 fi
 
@@ -91,15 +91,24 @@ if ! command -v install >/dev/null 2>&1; then
     exit 1
 fi
 
-if ! command -v cargo >/dev/null 2>&1; then
-    echo "cargo not found locally, bootstrapping via pkgx..." >&2
+have_usable_cargo() {
+    command -v cargo >/dev/null 2>&1 && cargo --version >/dev/null 2>&1
+}
+
+if ! have_usable_cargo; then
+    if command -v cargo >/dev/null 2>&1; then
+        echo "cargo is present but not usable, bootstrapping via pkgx..." >&2
+    else
+        echo "cargo not found locally, bootstrapping via pkgx..." >&2
+    fi
     if ! eval "$(sh <(curl -fsS https://pkgx.sh) +rust-lang.org +curl.se)"; then
         echo "failed to acquire temporary pkgx rust toolchain" >&2
         exit 1
     fi
+    hash -r
 fi
 
-if ! command -v cargo >/dev/null 2>&1; then
+if ! have_usable_cargo; then
     echo "cargo unavailable after bootstrap" >&2
     exit 1
 fi
@@ -110,7 +119,6 @@ cleanup() { rm -rf "$WORKDIR"; }
 trap cleanup EXIT
 
 export CARGO_HOME="$WORKDIR/cargo-home"
-export RUSTUP_HOME="$WORKDIR/rustup-home"
 INSTALL_ROOT="$WORKDIR/install-root"
 
 # ── build from the chosen source ────────────────────────────────────
@@ -124,15 +132,20 @@ crate)
     ;;
 github)
     REPO_URL="https://github.com/${TOOL_REPO}.git"
+    CARGO_ARGS=(install --locked --root "$INSTALL_ROOT" --git "$REPO_URL")
     if [[ -n "$TOOL_VERSION" ]]; then
         TAG="$TOOL_VERSION"
         if [[ "$TAG" =~ ^[0-9]+ ]]; then
             TAG="v${TAG}"
         fi
-        cargo install --locked --root "$INSTALL_ROOT" --git "$REPO_URL" --tag "$TAG" "$TOOL_CRATE"
-    else
-        cargo install --locked --root "$INSTALL_ROOT" --git "$REPO_URL" "$TOOL_CRATE"
+        CARGO_ARGS+=(--tag "$TAG")
     fi
+
+    if [[ -n "$TOOL_CRATE" ]]; then
+        CARGO_ARGS+=("$TOOL_CRATE")
+    fi
+
+    cargo "${CARGO_ARGS[@]}"
     ;;
 esac
 
@@ -143,7 +156,12 @@ if [[ ! -d "$BIN_DIR" ]] || [[ -z "$(ls -A "$BIN_DIR" 2>/dev/null)" ]]; then
     exit 1
 fi
 
-mapfile -t BINS < <(find "$BIN_DIR" -maxdepth 1 -type f -executable)
+BINS=()
+while IFS= read -r -d '' BIN_PATH; do
+    if [[ -x "$BIN_PATH" ]]; then
+        BINS+=("$BIN_PATH")
+    fi
+done < <(find "$BIN_DIR" -maxdepth 1 -type f -print0)
 
 if [[ ${#BINS[@]} -eq 0 ]]; then
     echo "build completed but no executables were found in $BIN_DIR" >&2
@@ -156,14 +174,26 @@ for BIN_SRC in "${BINS[@]}"; do
     BIN_NAME="$(basename "$BIN_SRC")"
     TARGET_PATH="$TOOL_INSTALL_DIR/$BIN_NAME"
 
-    if [[ -w "$TOOL_INSTALL_DIR" ]]; then
-        install -m 0755 "$BIN_SRC" "$TARGET_PATH"
-    else
-        if ! command -v sudo >/dev/null 2>&1; then
-            echo "need write access to $TOOL_INSTALL_DIR (try as root or install sudo)" >&2
-            exit 1
+    if [[ "$TOOL_INSTALL_DIR" == "/usr/local/bin" ]]; then
+        if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+            install -m 0755 "$BIN_SRC" "$TARGET_PATH"
+        else
+            if ! command -v sudo >/dev/null 2>&1; then
+                echo "sudo is required to install into /usr/local/bin" >&2
+                exit 1
+            fi
+            sudo install -m 0755 "$BIN_SRC" "$TARGET_PATH"
         fi
-        sudo install -m 0755 "$BIN_SRC" "$TARGET_PATH"
+    else
+        if [[ -w "$TOOL_INSTALL_DIR" ]]; then
+            install -m 0755 "$BIN_SRC" "$TARGET_PATH"
+        else
+            if ! command -v sudo >/dev/null 2>&1; then
+                echo "need write access to $TOOL_INSTALL_DIR (try as root or install sudo)" >&2
+                exit 1
+            fi
+            sudo install -m 0755 "$BIN_SRC" "$TARGET_PATH"
+        fi
     fi
 
     INSTALLED+=("$TARGET_PATH")
