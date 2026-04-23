@@ -32,8 +32,12 @@ $ErrorActionPreference = 'Stop'
 
 param(
     [string]$StardiveVersion = $null,
-    [string]$StardiveInstallDir = "$env:ProgramData\stardive\bin"
+    [string]$StardiveInstallDir = $null
 )
+
+if (-not $StardiveInstallDir) {
+    $StardiveInstallDir = Join-Path $env:ProgramData "stardive\bin"
+}
 
 function Write-ErrorAndExit {
     param([string]$Message)
@@ -164,7 +168,7 @@ try {
         Write-Host ""
         Write-Host "Note: $TargetDir is not in your PATH. Add it with:" -ForegroundColor Yellow
         Write-Host "  [Environment]::SetEnvironmentVariable('PATH', `"`$env:PATH;$TargetDir`", 'User')" -ForegroundColor Yellow
-        Write-Host "  Or add to current session: `$env:PATH = `$env:PATH + `";$TargetDir`"" -ForegroundColor Yellow
+        Write-Host "  Or add to current session: `$env:PATH = `$env:PATH + ';$TargetDir'" -ForegroundColor Yellow
     }
 }
 finally {
