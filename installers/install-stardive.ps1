@@ -66,10 +66,8 @@ try {
     $pkgxBootstrap = Invoke-RestMethod -Uri "https://pkgx.sh" -UseBasicParsing
     Invoke-Expression $pkgxBootstrap
     # Load pkgx into the current session and add Rust + curl
-    $pkgxEnv = pkgx +rust-lang.org +curl.se -e
-    if ($pkgxEnv) {
-        Invoke-Expression $pkgxEnv
-    }
+    # pkgx is now installed, use it to run cargo with rust + curl packages
+    $env:PATH = [System.IO.Path]::Combine($env:USERPROFILE, ".pkgx", "pkgx") + ";" + $env:PATH
 }
 catch {
     Write-ErrorAndExit "Failed to acquire temporary pkgx rust toolchain: $_"
@@ -80,7 +78,12 @@ if (-not (Get-Command "cargo" -ErrorAction SilentlyContinue)) {
     Write-ErrorAndExit "cargo unavailable after pkgx bootstrap"
 }
 
-Write-Host "cargo found: $(cargo --version)" -ForegroundColor Green
+# Verify cargo is available via pkgx
+$cargoCheck = pkgx +rust-lang.org +curl.se -- cargo --version
+if ($LASTEXITCODE -ne 0) {
+    Write-ErrorAndExit "cargo unavailable after pkgx bootstrap"
+}
+Write-Host "cargo found via pkgx: $cargoCheck" -ForegroundColor Green
 
 # --- Build and install ---
 
@@ -104,7 +107,7 @@ try {
     }
 
     Write-Host "Installing $CrateSpec to temporary root..." -ForegroundColor Cyan
-    cargo install --locked --root "$InstallRoot" "$CrateSpec"
+    pkgx +rust-lang.org +curl.se -- cargo install --locked --root "$InstallRoot" "$CrateSpec"
 
     $BinSrc = Join-Path $InstallRoot "bin" "stardive.exe"
     if (-not (Test-Path $BinSrc)) {
@@ -161,7 +164,7 @@ try {
         Write-Host ""
         Write-Host "Note: $TargetDir is not in your PATH. Add it with:" -ForegroundColor Yellow
         Write-Host "  [Environment]::SetEnvironmentVariable('PATH', `"`$env:PATH;$TargetDir`", 'User')" -ForegroundColor Yellow
-        Write-Host "  Or add to current session: `$env:PATH += `";$TargetDir`"" -ForegroundColor Yellow
+        Write-Host "  Or add to current session: `$env:PATH = `$env:PATH + `";$TargetDir`"" -ForegroundColor Yellow
     }
 }
 finally {
