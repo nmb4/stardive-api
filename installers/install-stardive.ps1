@@ -31,7 +31,7 @@ $ErrorActionPreference = 'Stop'
 #>
 
 param(
-    [string]$StardiveVersion = [string]::Empty,
+    [string]$StardiveVersion = $null,
     [string]$StardiveInstallDir = "$env:ProgramData\stardive\bin"
 )
 
