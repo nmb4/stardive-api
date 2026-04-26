@@ -114,9 +114,9 @@ once update '${APP_HOST}' --image '${IMAGE}'
 echo "==> waiting for healthy container"
 ssh "$SSH_HOST" "set -euo pipefail
 for _ in \$(seq 1 30); do
-  status=\$(docker ps --format '{{.Names}} {{.Status}}' | grep '^once-app-stardive-api' || true)
-  if [[ \"\$status\" == *'(healthy)'* ]]; then
-    echo \"\$status\"
+  container_state=\$(docker ps --format '{{.Names}} {{.Status}}' | grep '^once-app-stardive-api' || true)
+  if [[ \"\$container_state\" == *'(healthy)'* ]]; then
+    echo \"\$container_state\"
     exit 0
   fi
   sleep 2
