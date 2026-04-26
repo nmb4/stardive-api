@@ -42,6 +42,7 @@ async fn main() -> anyhow::Result<()> {
         tools,
         Arc::new(SystemCommandRunner),
         Arc::new(module_defs),
+        modules::lostandfound::new_store(),
     );
 
     let mut v1: Router<AppState> = Router::new();

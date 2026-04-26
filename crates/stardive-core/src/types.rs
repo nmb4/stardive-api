@@ -135,3 +135,101 @@ pub struct StaticFileEntry {
 pub struct StaticFileListResponse {
     pub files: Vec<StaticFileEntry>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundHealthResponse {
+    pub ok: bool,
+    pub service: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundUser {
+    pub id: u64,
+    pub name: String,
+    pub email: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundLoginRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundLoginResponse {
+    pub token: String,
+    pub user: LostAndFoundUser,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum LostAndFoundItemStatus {
+    Visible,
+    Returned,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum LostAndFoundClaimStatus {
+    Pending,
+    Approved,
+    Rejected,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundItem {
+    pub id: u64,
+    pub title: String,
+    pub description: String,
+    pub category: String,
+    pub found_location: String,
+    pub found_date: String,
+    pub found_time: String,
+    pub image_url: String,
+    pub status: LostAndFoundItemStatus,
+    pub created_by_user_id: u64,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundClaim {
+    pub id: u64,
+    pub item_id: u64,
+    pub claimer_user_id: u64,
+    pub status: LostAndFoundClaimStatus,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundItemFilter {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<LostAndFoundItemStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundCreateItemRequest {
+    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    pub category: String,
+    pub found_location: String,
+    pub found_date: String,
+    pub found_time: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_by_user_id: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundUpdateItemStatusRequest {
+    pub status: LostAndFoundItemStatus,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LostAndFoundCreateClaimRequest {
+    pub item_id: u64,
+    pub claimer_user_id: u64,
+}

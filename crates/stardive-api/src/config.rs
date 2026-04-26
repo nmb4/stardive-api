@@ -8,6 +8,7 @@ pub struct ModuleFlags {
     pub search: bool,
     pub files: bool,
     pub render: bool,
+    pub lostandfound: bool,
     pub installers: bool,
     pub eternal: bool,
 }
@@ -60,6 +61,7 @@ impl ServerConfig {
             search: read_bool("STARDIVE_ENABLE_SEARCH", true),
             files: read_bool("STARDIVE_ENABLE_FILES", true),
             render: read_bool("STARDIVE_ENABLE_RENDER", true),
+            lostandfound: read_bool("STARDIVE_ENABLE_LOSTANDFOUND", true),
             installers: read_bool("STARDIVE_ENABLE_INSTALLERS", true),
             eternal: read_bool("STARDIVE_ENABLE_ETERNAL", true),
         };

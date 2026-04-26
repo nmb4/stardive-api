@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
 use stardive_core::types::{ToolCapability, ToolsCapability};
+use tokio::sync::RwLock;
 
 use crate::{
     command_runner::CommandRunner, config::ServerConfig, file_store::FileStore, modules::ModuleDef,
+    modules::lostandfound::LostAndFoundStore,
 };
 
 #[derive(Debug, Clone)]
@@ -60,6 +62,7 @@ pub struct AppState {
     pub tools: RuntimeTools,
     pub command_runner: Arc<dyn CommandRunner>,
     pub module_defs: Arc<Vec<ModuleDef>>,
+    pub lostandfound_store: Arc<RwLock<LostAndFoundStore>>,
 }
 
 impl AppState {
@@ -69,6 +72,7 @@ impl AppState {
         tools: RuntimeTools,
         command_runner: Arc<dyn CommandRunner>,
         module_defs: Arc<Vec<ModuleDef>>,
+        lostandfound_store: Arc<RwLock<LostAndFoundStore>>,
     ) -> Self {
         Self {
             config,
@@ -76,6 +80,7 @@ impl AppState {
             tools,
             command_runner,
             module_defs,
+            lostandfound_store,
         }
     }
 }

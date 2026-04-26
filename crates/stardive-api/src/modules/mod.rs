@@ -1,5 +1,6 @@
 pub mod files;
 pub mod health;
+pub mod lostandfound;
 pub mod render;
 pub mod search;
 pub mod static_assets;
@@ -27,6 +28,7 @@ pub fn registry() -> Vec<ModuleDef> {
         search::module_def(),
         files::module_def(),
         render::module_def(),
+        lostandfound::module_def(),
         static_assets::installers_module_def(),
         static_assets::eternal_module_def(),
     ]

@@ -61,10 +61,21 @@ cargo run -p stardive -- --help
 - `GET /files`
 - `GET /files/{id}`
 - `POST /render/snippet` (`code`, optional `language`/`theme`, `format: svg|png`)
+- `GET /lostandfound/health`
+- `POST /lostandfound/auth/login`
+- `GET /lostandfound/items`
+- `GET /lostandfound/items/{id}`
+- `POST /lostandfound/items`
+- `PATCH /lostandfound/items/{id}/status`
+- `GET /lostandfound/claims`
+- `POST /lostandfound/claims`
+- `GET /lostandfound/categories`
 - `GET /installers`
 - `GET /installers/{name}`
 - `GET /eternal`
 - `GET /eternal/{name}`
+
+`lostandfound` is mounted under `/v1` like every module, so the full URL for login is `/v1/lostandfound/auth/login`.
 
 ## Configuration
 
@@ -76,7 +87,7 @@ cargo run -p stardive -- --help
 - `STARDIVE_API_KEY` (optional; when set, bearer auth is enforced except `/v1/health`)
 - `STARDIVE_MAX_UPLOAD_BYTES` (default `1073741824`)
 - `STARDIVE_MAX_SNIPPET_CHARS` (default `20000`)
-- `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|INSTALLERS|ETERNAL` (default `true`)
+- `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|LOSTANDFOUND|INSTALLERS|ETERNAL` (default `true`)
 
 `stardive` CLI config:
 - file: `~/.config/stardive/config.toml`
