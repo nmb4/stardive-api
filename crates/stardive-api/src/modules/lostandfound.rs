@@ -570,6 +570,7 @@ mod tests {
         let config = Arc::new(ServerConfig {
             bind_addr: "127.0.0.1:0".parse().expect("addr"),
             data_dir: data_dir.clone(),
+            log_dir: data_dir.join("logs"),
             installers_dir: data_dir.join("installers"),
             eternal_dir: data_dir.join("eternal"),
             api_key: None,

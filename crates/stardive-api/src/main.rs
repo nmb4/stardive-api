@@ -4,6 +4,7 @@ mod command_runner;
 mod config;
 mod error;
 mod file_store;
+mod logging;
 mod modules;
 
 use std::sync::Arc;
@@ -19,22 +20,44 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "stardive_api=info,info".to_string()),
-        )
-        .init();
-
     let config = ServerConfig::from_env()?;
+    let _file_log_guard = logging::init(&config.log_dir)?;
     let file_store = FileStore::new(config.data_dir.clone()).await?;
     let tools = app_state::RuntimeTools::detect();
 
     let module_defs = registry();
+    let available_modules = module_defs.iter().map(|def| def.name).collect::<Vec<_>>();
     let enabled: Vec<ModuleDef> = module_defs
         .iter()
         .copied()
         .filter(|def| (def.enabled)(&config.modules))
         .collect();
+    let enabled_modules = enabled.iter().map(|def| def.name).collect::<Vec<_>>();
+
+    info!(
+        bind_addr = %config.bind_addr,
+        data_dir = %config.data_dir.display(),
+        log_dir = %config.log_dir.display(),
+        installers_dir = %config.installers_dir.display(),
+        eternal_dir = %config.eternal_dir.display(),
+        api_key_set = config.api_key.is_some(),
+        public_mode = config.public_mode(),
+        max_upload_bytes = config.max_upload_bytes,
+        max_snippet_chars = config.max_snippet_chars,
+        health_enabled = config.modules.health,
+        search_enabled = config.modules.search,
+        files_enabled = config.modules.files,
+        render_enabled = config.modules.render,
+        lostandfound_enabled = config.modules.lostandfound,
+        installers_enabled = config.modules.installers,
+        eternal_enabled = config.modules.eternal,
+        "startup configuration loaded"
+    );
+    info!(
+        available_modules = ?available_modules,
+        enabled_modules = ?enabled_modules,
+        "module registry initialized"
+    );
 
     let state = AppState::new(
         Arc::new(config.clone()),
@@ -60,7 +83,8 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/up", get(up))
-        .nest("/v1", v1.with_state(state.clone()));
+        .nest("/v1", v1.with_state(state.clone()))
+        .layer(middleware::from_fn(logging::log_request_response));
 
     let listener = tokio::net::TcpListener::bind(config.bind_addr)
         .await

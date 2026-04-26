@@ -82,12 +82,18 @@ cargo run -p stardive -- --help
 `stardive-api` environment variables:
 - `STARDIVE_BIND_ADDR` (default `0.0.0.0:8080`)
 - `STARDIVE_DATA_DIR` (default `data`)
+- `STARDIVE_LOG_DIR` (default `<STARDIVE_DATA_DIR>/logs`, daily-rotated debug logs)
 - `STARDIVE_INSTALLERS_DIR` (default `installers`)
 - `STARDIVE_ETERNAL_DIR` (default `eternal`)
 - `STARDIVE_API_KEY` (optional; when set, bearer auth is enforced except `/v1/health`)
 - `STARDIVE_MAX_UPLOAD_BYTES` (default `1073741824`)
 - `STARDIVE_MAX_SNIPPET_CHARS` (default `20000`)
 - `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|LOSTANDFOUND|INSTALLERS|ETERNAL` (default `true`)
+
+Logging behavior:
+- request and response logs are emitted at `info` level
+- startup prints module availability and active config values at `info` level
+- `debug`+ logs are also written to a daily-rotated file: `stardive-api.debug.log` in `STARDIVE_LOG_DIR`
 
 `stardive` CLI config:
 - file: `~/.config/stardive/config.toml`
@@ -165,3 +171,13 @@ docker run --rm \
 ```
 
 Optional ONCE backup hooks are included at `/hooks/pre-backup` and `/hooks/post-restore`.
+
+## Deploy script
+
+Automate the server rollout flow (push -> remote pull/build/push -> `once update` -> health checks):
+
+```bash
+./scripts/deploy-stardive-server.sh
+```
+
+Use `./scripts/deploy-stardive-server.sh --help` for options like `--no-push`, custom host, branch, or image.

@@ -17,6 +17,7 @@ pub struct ModuleFlags {
 pub struct ServerConfig {
     pub bind_addr: SocketAddr,
     pub data_dir: PathBuf,
+    pub log_dir: PathBuf,
     pub installers_dir: PathBuf,
     pub eternal_dir: PathBuf,
     pub api_key: Option<String>,
@@ -44,6 +45,10 @@ impl ServerConfig {
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("eternal"));
 
+        let log_dir = std::env::var("STARDIVE_LOG_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| data_dir.join("logs"));
+
         let api_key = std::env::var("STARDIVE_API_KEY").ok();
 
         let max_upload_bytes = std::env::var("STARDIVE_MAX_UPLOAD_BYTES")
@@ -69,6 +74,7 @@ impl ServerConfig {
         Ok(Self {
             bind_addr,
             data_dir,
+            log_dir,
             installers_dir,
             eternal_dir,
             api_key,
