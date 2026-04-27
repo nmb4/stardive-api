@@ -11,11 +11,18 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use app_state::AppState;
-use axum::{Router, extract::DefaultBodyLimit, http::StatusCode, middleware, routing::get};
+use axum::{
+    Router,
+    extract::DefaultBodyLimit,
+    http::{Method, StatusCode},
+    middleware,
+    routing::get,
+};
 use command_runner::SystemCommandRunner;
 use config::ServerConfig;
 use file_store::FileStore;
 use modules::{ModuleDef, registry};
+use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 
 #[tokio::main]
@@ -84,6 +91,19 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/up", get(up))
         .nest("/v1", v1.with_state(state.clone()))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods([
+                    Method::GET,
+                    Method::POST,
+                    Method::PUT,
+                    Method::PATCH,
+                    Method::DELETE,
+                    Method::OPTIONS,
+                ])
+                .allow_headers(Any),
+        )
         .layer(middleware::from_fn(logging::log_request_response));
 
     let listener = tokio::net::TcpListener::bind(config.bind_addr)
