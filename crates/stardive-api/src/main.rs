@@ -83,9 +83,8 @@ async fn main() -> anyhow::Result<()> {
         v1 = (def.register)(v1);
     }
 
-    let body_limit = usize::try_from(config.max_upload_bytes).unwrap_or(usize::MAX);
     let v1 = v1
-        .layer(DefaultBodyLimit::max(body_limit))
+        .layer(DefaultBodyLimit::disable())
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth::auth_middleware,

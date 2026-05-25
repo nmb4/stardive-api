@@ -57,9 +57,11 @@ cargo run -p stardive -- --help
 - `POST /search/text`
 - `POST /search/news`
 - `POST /extract`
-- `POST /files` (multipart field: `file`, max default `1_073_741_824` bytes)
+- `POST /files` (multipart field: `file`)
 - `GET /files`
 - `GET /files/{id}`
+- `PUT /files/{id}` (multipart field: `file`, replaces content and metadata)
+- `DELETE /files/{id}`
 - `POST /render/snippet` (`code`, optional `language`/`theme`, `format: svg|png`)
 - `GET /lostandfound/health`
 - `POST /lostandfound/auth/login`
@@ -132,7 +134,7 @@ Each vibecode job runs opencode in an isolated job directory with a deny-by-defa
 - `STARDIVE_INSTALLERS_DIR` (default `installers`)
 - `STARDIVE_ETERNAL_DIR` (default `eternal`)
 - `STARDIVE_API_KEY` (optional; when set, bearer auth is enforced except `/v1/health`)
-- `STARDIVE_MAX_UPLOAD_BYTES` (default `1073741824`)
+- `STARDIVE_MAX_UPLOAD_BYTES` (default `1073741824`, used by Orbit script uploads; `/files` uploads are unbounded)
 - `STARDIVE_MAX_SNIPPET_CHARS` (default `20000`)
 - `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|LOSTANDFOUND|ORBIT|INSTALLERS|ETERNAL` (default `true`)
 
