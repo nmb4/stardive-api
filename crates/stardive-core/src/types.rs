@@ -20,6 +20,7 @@ pub struct ToolCapability {
 pub struct ToolsCapability {
     pub ddgs: ToolCapability,
     pub freeze: ToolCapability,
+    pub opencode: ToolCapability,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,6 +89,66 @@ pub struct UploadResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileListResponse {
     pub files: Vec<FileMetadata>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OrbitScriptStatus {
+    Uploaded,
+    Pending,
+    Generating,
+    Ready,
+    Failed,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OrbitScriptSource {
+    Uploaded,
+    Generated,
+    Refactor,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrbitScriptMetadata {
+    pub id: String,
+    pub name: String,
+    pub size: u64,
+    pub sha256: String,
+    pub status: OrbitScriptStatus,
+    pub source: OrbitScriptSource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prompt: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrbitUploadResponse {
+    pub script: OrbitScriptMetadata,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrbitScriptListResponse {
+    pub scripts: Vec<OrbitScriptMetadata>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrbitVibecodeRequest {
+    pub prompt: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub script_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrbitVibecodeResponse {
+    pub script: OrbitScriptMetadata,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -295,12 +295,10 @@ async fn create_item(
         found_location: payload.found_location,
         found_date: payload.found_date,
         found_time: payload.found_time,
-        image_url: payload
-            .image_url
-            .unwrap_or_else(|| {
-                "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop"
-                    .to_string()
-            }),
+        image_url: payload.image_url.unwrap_or_else(|| {
+            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop"
+                .to_string()
+        }),
         status: LostAndFoundItemStatus::Visible,
         created_by_user_id: payload.created_by_user_id.unwrap_or(1),
         created_at: Utc::now(),
@@ -582,6 +580,7 @@ mod tests {
                 files: true,
                 render: true,
                 lostandfound: true,
+                orbit: true,
                 installers: true,
                 eternal: true,
             },
@@ -594,7 +593,7 @@ mod tests {
         );
 
         let state = AppState::new(
-            config,
+            config.clone(),
             file_store,
             RuntimeTools {
                 ddgs: ToolStatus {
@@ -605,10 +604,17 @@ mod tests {
                     available: false,
                     path: None,
                 },
+                opencode: ToolStatus {
+                    available: false,
+                    path: None,
+                },
             },
             Arc::new(NoopCommandRunner),
             Arc::new(Vec::<ModuleDef>::new()),
             new_store(),
+            crate::modules::orbit::new_store(config.data_dir.clone())
+                .await
+                .expect("orbit store"),
         );
 
         register(Router::new()).with_state(state)

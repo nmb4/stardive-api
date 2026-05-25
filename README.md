@@ -70,12 +70,58 @@ cargo run -p stardive -- --help
 - `GET /lostandfound/claims`
 - `POST /lostandfound/claims`
 - `GET /lostandfound/categories`
+- `POST /orbit/scripts` (multipart field: `file`, Lua files only)
+- `GET /orbit/scripts`
+- `GET /orbit/scripts/{id-or-name}`
+- `POST /orbit/vibecode` (`prompt`, optional `script_id`/`name`)
 - `GET /installers`
 - `GET /installers/{name}`
 - `GET /eternal`
 - `GET /eternal/{name}`
 
 `lostandfound` is mounted under `/v1` like every module, so the full URL for login is `/v1/lostandfound/auth/login`.
+
+### Orbit API
+
+Orbit endpoints are mounted under `/v1/orbit` and store Lua scripts in `<STARDIVE_DATA_DIR>/orbit`.
+
+Upload a Love2D Lua script:
+
+```bash
+curl -F "file=@main.lua" http://localhost:8080/v1/orbit/scripts
+```
+
+List scripts, including pending vibecode jobs:
+
+```bash
+curl http://localhost:8080/v1/orbit/scripts
+```
+
+Download a ready script by temporary id or by filename:
+
+```bash
+curl -o main.lua http://localhost:8080/v1/orbit/scripts/main.lua
+```
+
+Create a new script with opencode:
+
+```bash
+curl -X POST http://localhost:8080/v1/orbit/vibecode \
+  -H "content-type: application/json" \
+  -d '{"prompt":"make a small touch-friendly asteroid dodging game","name":"asteroids.lua"}'
+```
+
+Refactor an existing script with opencode:
+
+```bash
+curl -X POST http://localhost:8080/v1/orbit/vibecode \
+  -H "content-type: application/json" \
+  -d '{"script_id":"<id>","prompt":"make controls work better on phones"}'
+```
+
+`POST /orbit/vibecode` returns `202 Accepted` with a temporary script `id` immediately. Poll `GET /orbit/scripts` until that entry changes from `pending`/`generating` to `ready` or `failed`.
+
+Each vibecode job runs opencode in an isolated job directory with a deny-by-default `opencode.json`. The job can read its prompt, optional `input.lua`, copied `inspiration/*.lua` scripts, and the local Orbit skill; it can edit only `output.lua`; bash is denied except `stylua` and `selene` validation commands.
 
 ## Configuration
 
@@ -88,7 +134,7 @@ cargo run -p stardive -- --help
 - `STARDIVE_API_KEY` (optional; when set, bearer auth is enforced except `/v1/health`)
 - `STARDIVE_MAX_UPLOAD_BYTES` (default `1073741824`)
 - `STARDIVE_MAX_SNIPPET_CHARS` (default `20000`)
-- `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|LOSTANDFOUND|INSTALLERS|ETERNAL` (default `true`)
+- `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|LOSTANDFOUND|ORBIT|INSTALLERS|ETERNAL` (default `true`)
 
 Logging behavior:
 - request and response logs are emitted at `info` level

@@ -4,8 +4,11 @@ use stardive_core::types::{ToolCapability, ToolsCapability};
 use tokio::sync::RwLock;
 
 use crate::{
-    command_runner::CommandRunner, config::ServerConfig, file_store::FileStore, modules::ModuleDef,
-    modules::lostandfound::LostAndFoundStore,
+    command_runner::CommandRunner,
+    config::ServerConfig,
+    file_store::FileStore,
+    modules::ModuleDef,
+    modules::{lostandfound::LostAndFoundStore, orbit::OrbitStore},
 };
 
 #[derive(Debug, Clone)]
@@ -18,6 +21,7 @@ pub struct ToolStatus {
 pub struct RuntimeTools {
     pub ddgs: ToolStatus,
     pub freeze: ToolStatus,
+    pub opencode: ToolStatus,
 }
 
 impl RuntimeTools {
@@ -25,6 +29,7 @@ impl RuntimeTools {
         Self {
             ddgs: detect_tool("ddgs"),
             freeze: detect_tool("freeze"),
+            opencode: detect_tool("opencode"),
         }
     }
 
@@ -37,6 +42,10 @@ impl RuntimeTools {
             freeze: ToolCapability {
                 available: self.freeze.available,
                 path: self.freeze.path.clone(),
+            },
+            opencode: ToolCapability {
+                available: self.opencode.available,
+                path: self.opencode.path.clone(),
             },
         }
     }
@@ -63,6 +72,7 @@ pub struct AppState {
     pub command_runner: Arc<dyn CommandRunner>,
     pub module_defs: Arc<Vec<ModuleDef>>,
     pub lostandfound_store: Arc<RwLock<LostAndFoundStore>>,
+    pub orbit_store: Arc<OrbitStore>,
 }
 
 impl AppState {
@@ -73,6 +83,7 @@ impl AppState {
         command_runner: Arc<dyn CommandRunner>,
         module_defs: Arc<Vec<ModuleDef>>,
         lostandfound_store: Arc<RwLock<LostAndFoundStore>>,
+        orbit_store: Arc<OrbitStore>,
     ) -> Self {
         Self {
             config,
@@ -81,6 +92,7 @@ impl AppState {
             command_runner,
             module_defs,
             lostandfound_store,
+            orbit_store,
         }
     }
 }

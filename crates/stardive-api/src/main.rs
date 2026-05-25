@@ -30,6 +30,7 @@ async fn main() -> anyhow::Result<()> {
     let config = ServerConfig::from_env()?;
     let _file_log_guard = logging::init(&config.log_dir)?;
     let file_store = FileStore::new(config.data_dir.clone()).await?;
+    let orbit_store = modules::orbit::new_store(config.data_dir.clone()).await?;
     let tools = app_state::RuntimeTools::detect();
 
     let module_defs = registry();
@@ -56,6 +57,7 @@ async fn main() -> anyhow::Result<()> {
         files_enabled = config.modules.files,
         render_enabled = config.modules.render,
         lostandfound_enabled = config.modules.lostandfound,
+        orbit_enabled = config.modules.orbit,
         installers_enabled = config.modules.installers,
         eternal_enabled = config.modules.eternal,
         "startup configuration loaded"
@@ -73,6 +75,7 @@ async fn main() -> anyhow::Result<()> {
         Arc::new(SystemCommandRunner),
         Arc::new(module_defs),
         modules::lostandfound::new_store(),
+        orbit_store,
     );
 
     let mut v1: Router<AppState> = Router::new();
