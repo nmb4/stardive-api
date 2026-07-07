@@ -14,8 +14,9 @@ use app_state::AppState;
 use axum::{
     Router,
     extract::DefaultBodyLimit,
-    http::{Method, StatusCode},
+    http::{Method, StatusCode, header},
     middleware,
+    response::{Html, IntoResponse},
     routing::get,
 };
 use command_runner::SystemCommandRunner;
@@ -24,6 +25,8 @@ use file_store::FileStore;
 use modules::{ModuleDef, registry};
 use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
+
+const FILES_WEBAPP_HTML: &str = include_str!("../../../files-webapp.html");
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -92,6 +95,9 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/up", get(up))
+        .route("/", get(files_webapp))
+        .route("/files-webapp", get(files_webapp))
+        .route("/files-webapp.html", get(files_webapp))
         .nest("/v1", v1.with_state(state.clone()))
         .layer(
             CorsLayer::new()
@@ -121,4 +127,56 @@ async fn main() -> anyhow::Result<()> {
 
 async fn up() -> StatusCode {
     StatusCode::OK
+}
+
+async fn files_webapp() -> impl IntoResponse {
+    (
+        [(header::CACHE_CONTROL, "public, max-age=0, must-revalidate")],
+        Html(FILES_WEBAPP_HTML),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use axum::{
+        body::{Body, to_bytes},
+        http::{Request, StatusCode},
+    };
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn files_webapp_routes_serve_embedded_html() {
+        let app = Router::new()
+            .route("/", get(files_webapp))
+            .route("/files-webapp", get(files_webapp))
+            .route("/files-webapp.html", get(files_webapp));
+
+        for uri in ["/", "/files-webapp", "/files-webapp.html"] {
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .uri(uri)
+                        .body(Body::empty())
+                        .expect("request"),
+                )
+                .await
+                .expect("response");
+
+            assert_eq!(response.status(), StatusCode::OK);
+            assert_eq!(
+                response.headers().get(header::CACHE_CONTROL).unwrap(),
+                "public, max-age=0, must-revalidate"
+            );
+
+            let body = to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("body");
+            let html = std::str::from_utf8(&body).expect("utf8 html");
+            assert!(html.contains("STARDIVE | Isometric Files Vault"));
+            assert!(html.contains("https://api.stardive.space"));
+        }
+    }
 }

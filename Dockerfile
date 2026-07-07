@@ -2,6 +2,7 @@ FROM rust:1.95-bookworm AS rust-builder
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
+COPY files-webapp.html ./files-webapp.html
 COPY installers ./installers
 COPY eternal ./eternal
 RUN cargo build --release -p stardive-api

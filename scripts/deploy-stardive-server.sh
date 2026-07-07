@@ -8,8 +8,10 @@ SSH_HOST="stardive"
 REMOTE_REPO="/root/repos/stardive-api"
 BRANCH="main"
 APP_HOST="api.stardive.space"
+FILES_APP_HOST="files.stardive.space"
 IMAGE="localhost:5000/stardive-api:once-local"
 PUBLIC_BASE_URL="https://api.stardive.space"
+FILES_PUBLIC_BASE_URL="https://files.stardive.space"
 PUSH_LOCAL=1
 
 usage() {
@@ -24,10 +26,15 @@ Options:
   --remote-repo <path>      Remote repo path (default: /root/repos/stardive-api)
   --branch <name>           Branch to deploy (default: main)
   --app-host <host>         once app host (default: api.stardive.space)
+  --files-app-host <host>   once files web host (default: files.stardive.space)
+  --no-files-app-host       Do not deploy/update the files web host
   --image <ref>             Image ref for build/push/update
                             (default: localhost:5000/stardive-api:once-local)
   --public-base-url <url>   URL for final health checks
                             (default: https://api.stardive.space)
+  --files-public-base-url <url>
+                            URL for final files web check
+                            (default: https://files.stardive.space)
   --no-push                 Skip local git push before deploy
   -h, --help                Show help
 
@@ -56,12 +63,24 @@ while [[ $# -gt 0 ]]; do
       APP_HOST="${2:-}"
       shift 2
       ;;
+    --files-app-host)
+      FILES_APP_HOST="${2:-}"
+      shift 2
+      ;;
+    --no-files-app-host)
+      FILES_APP_HOST=""
+      shift
+      ;;
     --image)
       IMAGE="${2:-}"
       shift 2
       ;;
     --public-base-url)
       PUBLIC_BASE_URL="${2:-}"
+      shift 2
+      ;;
+    --files-public-base-url)
+      FILES_PUBLIC_BASE_URL="${2:-}"
       shift 2
       ;;
     --no-push)
@@ -109,6 +128,13 @@ git pull --ff-only origin '${BRANCH}'
 docker build -t '${IMAGE}' .
 docker push '${IMAGE}'
 once update '${APP_HOST}' --image '${IMAGE}'
+if [[ -n '${FILES_APP_HOST}' ]]; then
+  if once list | grep -Fq '${FILES_APP_HOST}'; then
+    once update '${FILES_APP_HOST}' --image '${IMAGE}'
+  else
+    once deploy '${IMAGE}' --host '${FILES_APP_HOST}'
+  fi
+fi
 "
 
 echo "==> waiting for healthy container"
@@ -128,7 +154,13 @@ exit 1
 echo "==> verifying public endpoints"
 curl -fsS "${PUBLIC_BASE_URL}/up" >/dev/null
 curl -fsS "${PUBLIC_BASE_URL}/v1/lostandfound/health" >/dev/null
+if [[ -n "$FILES_APP_HOST" ]]; then
+  curl -fsS "${FILES_PUBLIC_BASE_URL}/" >/dev/null
+fi
 
 echo "deploy complete"
 echo "  app:   ${APP_HOST}"
+if [[ -n "$FILES_APP_HOST" ]]; then
+  echo "  files: ${FILES_APP_HOST}"
+fi
 echo "  image: ${IMAGE}"

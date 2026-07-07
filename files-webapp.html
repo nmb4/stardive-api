@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STARDIVE | Isometric Files Vault</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        stardive: {
+                            base: '#020202',
+                            panel: 'rgba(12, 12, 14, 0.4)',
+                            border: 'rgba(255, 255, 255, 0.08)',
+                            text: '#f4f4f5',
+                            muted: '#a1a1aa',
+                            glow: 'rgba(255, 255, 255, 0.15)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 8s cubic-bezier(0.37, 0, 0.63, 1) infinite',
+                        'float-delayed': 'float 8s cubic-bezier(0.37, 0, 0.63, 1) 4s infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow-shift': 'glowShift 10s ease-in-out infinite alternate',
+                        'fade-up': 'fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        glowShift: {
+                            '0%': { opacity: 0.2, transform: 'scale(1)' },
+                            '100%': { opacity: 0.5, transform: 'scale(1.2)' },
+                        },
+                        fadeUp: {
+                            '0%': { opacity: 0, transform: 'translateY(15px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons (Fallback Helper) -->
+    <script src="https://unpkg.com/lucide@0.344.0"></script>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            background-color: #020202;
+            color: #f4f4f5;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(20, 20, 24, 1) 0%, rgba(2, 2, 2, 1) 60%),
+                radial-gradient(circle at 100% 100%, rgba(15, 15, 18, 1) 0%, rgba(2, 2, 2, 1) 50%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+        
+        /* Deep grid background */
+        .bg-grid {
+            background-size: 60px 60px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            mask-image: radial-gradient(ellipse at center, black 40%, transparent 95%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 95%);
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(12, 12, 14, 0.45);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 
+                inset 0 1px 1px rgba(255, 255, 255, 0.03),
+                0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-card-hover {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-card-hover:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 
+                inset 0 1px 1px rgba(255, 255, 255, 0.08),
+                0 25px 50px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(255, 255, 255, 0.03);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(2, 2, 2, 0.9);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .text-gradient {
+            background: linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-gradient-cyan {
+            background: linear-gradient(135deg, #38bdf8 0%, #0369a1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-zinc-800 selection:text-white font-sans overflow-y-scroll">
+    
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Custom Embedded SVG Icons for maximum standalone stability ---
+        const Icons = {
+            Upload: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
+            Refresh: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M16 3h5v5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 21H3v-5"/></svg>,
+            Database: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>,
+            Search: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>,
+            File: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>,
+            FileText: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>,
+            Trash: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
+            Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
+            Settings: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Info: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>,
+            AlertCircle: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>,
+            Check: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            Close: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>,
+            ExternalLink: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>,
+            Eye: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Terminal: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>,
+            Grid: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>,
+            List: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>,
+            Replace: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><path d="M17 12H7"/></svg>,
+            ArrowUpRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="7" x2="17" y1="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        };
+
+        // --- Simulated Data for Mock Mode fallback ---
+        const DEMO_FILES = [
+            {
+                id: "file-9a2c",
+                name: "orbital_trajectory.png",
+                mime_type: "image/png",
+                size_bytes: 421092,
+                created_at: "2026-05-24T14:32:00Z",
+                url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&auto=format&fit=crop"
+            },
+            {
+                id: "file-3b8e",
+                name: "stardive_architect_core.lua",
+                mime_type: "text/x-lua",
+                size_bytes: 8431,
+                created_at: "2026-05-25T09:15:22Z",
+                content: `-- Stardive Orbit Core Module\n-- Generates dynamic space particles\n\nlocal orbit = {}\n\nfunction orbit.init()\n    self.particles = {}\n    for i=1,100 do\n        table.insert(self.particles, {\n            x = math.random(0, 800),\n            y = math.random(0, 600),\n            speed = math.random(2, 5)\n        })\n    end\nend\n\nreturn orbit`
+            },
+            {
+                id: "file-1f2a",
+                name: "space_anomaly_manifest.json",
+                mime_type: "application/json",
+                size_bytes: 2048,
+                created_at: "2026-05-25T11:02:10Z",
+                content: `{\n  "system": "STARDIVE_RECON_7",\n  "coordinates": {\n    "x": -2304.59,\n    "y": 4910.12,\n    "z": 892.41\n  },\n  "elements": [\n    "Nebulium",\n    "CosmicDust",\n    "ExoticMatter"\n  ],\n  "stable": false\n}`
+            },
+            {
+                id: "file-d29c",
+                name: "deep_space_telemetry.jpg",
+                mime_type: "image/jpeg",
+                size_bytes: 1258900,
+                created_at: "2026-05-25T19:40:00Z",
+                url: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=600&auto=format&fit=crop"
+            },
+            {
+                id: "file-ec09",
+                name: "install-stardive.sh",
+                mime_type: "text/x-shellscript",
+                size_bytes: 1450,
+                created_at: "2026-05-23T08:12:00Z",
+                content: `#!/bin/bash\n# Stardive install script helper\n\necho "STARDIVE installation initiating..."\ncurl -fsSL https://raw.githubusercontent.com/nmb4/stardive-api/main/installers/install-stardive.sh | bash\n`
+            }
+        ];
+
+        // --- Header Component ---
+        const Header = ({ config, onOpenSettings, apiStatus }) => {
+            return (
+                <header className="fixed top-0 left-0 w-full z-40 bg-[#020202]/85 backdrop-blur-md border-b border-white/5 py-4 px-6 md:px-12 flex justify-between items-center transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full border border-zinc-700/80 flex items-center justify-center bg-zinc-900/80 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+                            <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse-slow shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-display font-black tracking-[0.25em] text-md text-white">STARDIVE</span>
+                            <span className="text-[9px] font-mono text-zinc-500 tracking-[0.15em] uppercase">Isometric Files Vault</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        {/* Status Light Indicator */}
+                        <div className="flex items-center gap-2 px-3 py-1 bg-zinc-950/80 border border-zinc-800 rounded-full text-[11px] font-mono">
+                            <span className={`w-2 h-2 rounded-full ${apiStatus === 'online' ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)]' : apiStatus === 'demo' ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]'}`}></span>
+                            <span className="text-zinc-400 md:inline hidden">{apiStatus === 'online' ? 'vault system online' : apiStatus === 'demo' ? 'simulated local sandbox' : 'connection offline'}</span>
+                            <span className="text-zinc-500 md:hidden uppercase">{apiStatus}</span>
+                        </div>
+
+                        {/* Settings Trigger */}
+                        <button 
+                            onClick={onOpenSettings}
+                            className="p-2 text-zinc-400 hover:text-white bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 rounded-lg transition-all duration-200"
+                            title="Connection Configuration"
+                        >
+                            <Icons.Settings />
+                        </button>
+                    </div>
+                </header>
+            );
+        };
+
+        // --- Isometric Hero Decorative Accent ---
+        const IsometricDecorative = () => {
+            return (
+                <div className="relative w-full max-w-[280px] mx-auto aspect-square flex items-center justify-center select-none pointer-events-none opacity-95">
+                    <svg viewBox="0 0 500 500" className="w-full h-full drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)]">
+                        <defs>
+                            <linearGradient id="gTop" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#222226" />
+                                <stop offset="100%" stopColor="#0c0c0e" />
+                            </linearGradient>
+                            <linearGradient id="gLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="#141417" />
+                                <stop offset="100%" stopColor="#060608" />
+                            </linearGradient>
+                            <linearGradient id="gRight" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="#0a0a0c" />
+                                <stop offset="100%" stopColor="#010102" />
+                            </linearGradient>
+                        </defs>
+
+                        <g stroke="rgba(255,255,255,0.25)" strokeWidth="0.75" strokeLinejoin="round" strokeLinecap="round">
+                            {/* Main central tower */}
+                            <g transform="translate(0, -10)">
+                                <path d="M250,110 L310,140 L310,310 L250,340 L190,310 L190,140 Z" fill="url(#gRight)" stroke="none" />
+                                <path d="M250,110 L310,140 L250,170 L190,140 Z" fill="url(#gTop)" />
+                                <path d="M250,170 L310,140 L310,310 L250,340 Z" fill="url(#gRight)" />
+                                <path d="M190,140 L250,170 L250,340 L190,310 Z" fill="url(#gLeft)" />
+                                <circle cx="250" cy="140" r="1.5" fill="#fff" className="animate-pulse" />
+                                <circle cx="235" cy="148" r="1" fill="#fff" opacity="0.6" />
+                                <circle cx="265" cy="132" r="1" fill="#fff" opacity="0.6" />
+                            </g>
+
+                            {/* Floating micro vault */}
+                            <g className="animate-float">
+                                <path d="M360,200 L410,225 L410,275 L360,300 L310,275 L310,225 Z" fill="url(#gRight)" stroke="none" opacity="0.8" />
+                                <path d="M360,200 L410,225 L360,250 L310,225 Z" fill="url(#gTop)" />
+                                <path d="M360,250 L410,225 L410,275 L360,300 Z" fill="url(#gRight)" />
+                                <path d="M310,225 L360,250 L360,300 L310,275 Z" fill="url(#gLeft)" />
+                                <circle cx="360" cy="225" r="1" fill="#fff" />
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+            );
+        };
+
+        // --- Main App Dashboard Component ---
+        const App = () => {
+            // Configuration & API Connection State
+            const [apiUrl, setApiUrl] = useState(() => localStorage.getItem('stardive_api_url') || 'https://api.stardive.space');
+            const [apiKey, setApiKey] = useState(() => localStorage.getItem('stardive_api_key') || '');
+            const [useSimulated, setUseSimulated] = useState(() => localStorage.getItem('stardive_use_simulated') === 'true'); 
+            
+            // UI state
+            const [showSettingsModal, setShowSettingsModal] = useState(false);
+            const [files, setFiles] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+            
+            // Detail / Update Modal panel State
+            const [selectedFile, setSelectedFile] = useState(null);
+            const [showUploadZone, setShowUploadZone] = useState(true);
+            const [uploading, setUploading] = useState(false);
+            const [uploadProgress, setUploadProgress] = useState(0);
+            const [replaceTargetId, setReplaceTargetId] = useState(null);
+
+            // Health statuses
+            const [apiHealth, setApiHealth] = useState({ up: false, error: null, checkedAt: null });
+            const [apiStatus, setApiStatus] = useState('demo'); // 'online' | 'offline' | 'demo'
+            const [alertMessage, setAlertMessage] = useState(null);
+
+            const fileInputRef = useRef(null);
+            const replaceInputRef = useRef(null);
+
+            // Fetch and check health on initial load & state changes
+            useEffect(() => {
+                verifyHealthAndFetch();
+            }, [apiUrl, apiKey, useSimulated]);
+
+            // Save config parameters
+            const saveSettings = (newUrl, newKey, useSim) => {
+                const cleanedUrl = newUrl.replace(/\/$/, ""); // trim trailing slash
+                setApiUrl(cleanedUrl);
+                setApiKey(newKey);
+                setUseSimulated(useSim);
+                
+                localStorage.setItem('stardive_api_url', cleanedUrl);
+                localStorage.setItem('stardive_api_key', newKey);
+                localStorage.setItem('stardive_use_simulated', useSim ? 'true' : 'false');
+                
+                setShowSettingsModal(false);
+                triggerToast("System reconfiguration applied successfully.", "success");
+            };
+
+            const triggerToast = (message, type = 'info') => {
+                setAlertMessage({ message, type });
+                setTimeout(() => {
+                    setAlertMessage(null);
+                }, 4000);
+            };
+
+            const normalizeServerFile = (file) => ({
+                ...file,
+                name: file.name || file.original_name || 'unnamed-file',
+                size_bytes: file.size_bytes ?? file.size ?? 0,
+                mime_type: file.mime_type || 'application/octet-stream',
+            });
+
+            const normalizeServerFileList = (payload) => {
+                const rawFiles = Array.isArray(payload) ? payload : (payload?.files || []);
+                return rawFiles.map(normalizeServerFile);
+            };
+
+            // Health check and primary content loading
+            const verifyHealthAndFetch = async () => {
+                setLoading(true);
+                
+                if (useSimulated) {
+                    // Seed sandbox local storage database if empty
+                    const stored = localStorage.getItem('stardive_mock_files');
+                    if (!stored) {
+                        localStorage.setItem('stardive_mock_files', JSON.stringify(DEMO_FILES));
+                        setFiles(DEMO_FILES);
+                    } else {
+                        setFiles(JSON.parse(stored));
+                    }
+                    setApiStatus('demo');
+                    setApiHealth({ up: true, error: null, checkedAt: new Date().toLocaleTimeString() });
+                    setLoading(false);
+                    return;
+                }
+
+                try {
+                    // Try to fetch either /up or /v1/health or /health
+                    const headers = {};
+                    if (apiKey) {
+                        headers['Authorization'] = `Bearer ${apiKey}`;
+                    }
+
+                    // Perform a concurrent check of /up and /v1/health
+                    const healthUrl = `${apiUrl}/up`;
+                    const upCheck = await fetch(healthUrl, { method: 'GET', headers }).catch(() => null);
+
+                    if (upCheck && upCheck.ok) {
+                        setApiHealth({ up: true, error: null, checkedAt: new Date().toLocaleTimeString() });
+                        setApiStatus('online');
+                        await fetchFileList();
+                    } else {
+                        // Fallback check to /v1/health as listed in endpoints config
+                        const altHealthUrl = `${apiUrl}/v1/health`;
+                        const altCheck = await fetch(altHealthUrl, { method: 'GET', headers }).catch(() => null);
+                        if (altCheck && altCheck.ok) {
+                            setApiHealth({ up: true, error: null, checkedAt: new Date().toLocaleTimeString() });
+                            setApiStatus('online');
+                            await fetchFileList();
+                        } else {
+                            throw new Error("Endpoint reached but status returned invalid response code.");
+                        }
+                    }
+                } catch (err) {
+                    setApiHealth({ up: false, error: err.message || "Failed connection", checkedAt: new Date().toLocaleTimeString() });
+                    setApiStatus('offline');
+                    // Automatically fallback to Mock environment to maintain smooth interface usability
+                    const stored = localStorage.getItem('stardive_mock_files') || JSON.stringify(DEMO_FILES);
+                    setFiles(JSON.parse(stored));
+                    triggerToast("Using Offline Local Sandbox state.", "warning");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Fetch list of files from server
+            const fetchFileList = async () => {
+                if (useSimulated) {
+                    const stored = JSON.parse(localStorage.getItem('stardive_mock_files') || JSON.stringify(DEMO_FILES));
+                    setFiles(stored);
+                    return;
+                }
+
+                try {
+                    const headers = {};
+                    if (apiKey) {
+                        headers['Authorization'] = `Bearer ${apiKey}`;
+                    }
+                    const res = await fetch(`${apiUrl}/v1/files`, { headers });
+                    if (!res.ok) throw new Error(`HTTP error status: ${res.status}`);
+                    const data = await res.json();
+                    
+                    // stardive-api returns { files: [{ id, original_name, size, mime_type, ... }] }.
+                    // Normalize it to the shape the UI was generated around.
+                    setFiles(normalizeServerFileList(data));
+                } catch (err) {
+                    triggerToast(`Failed to load server files: ${err.message}`, "error");
+                }
+            };
+
+            // Custom UI file uploader handler
+            const handleFileUpload = async (event, replacementId = null) => {
+                const targetFiles = event.target.files;
+                if (!targetFiles || targetFiles.length === 0) return;
+                const file = targetFiles[0];
+
+                setUploading(true);
+                setUploadProgress(10);
+
+                if (useSimulated || apiStatus === 'offline') {
+                    // Simulate high-fidelity upload delay and local persistence
+                    const interval = setInterval(() => {
+                        setUploadProgress(prev => {
+                            if (prev >= 90) {
+                                clearInterval(interval);
+                                return 90;
+                            }
+                            return prev + 25;
+                        });
+                    }, 150);
+
+                    setTimeout(() => {
+                        clearInterval(interval);
+                        setUploadProgress(100);
+
+                        const currentMock = JSON.parse(localStorage.getItem('stardive_mock_files') || JSON.stringify(DEMO_FILES));
+                        
+                        if (replacementId) {
+                            // PUT replace logic
+                            const updated = currentMock.map(item => {
+                                if (item.id === replacementId) {
+                                    return {
+                                        ...item,
+                                        name: file.name,
+                                        mime_type: file.type || "application/octet-stream",
+                                        size_bytes: file.size,
+                                        created_at: new Date().toISOString(),
+                                        url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+                                        content: "Simulated updated binary byte-buffer."
+                                    };
+                                }
+                                return item;
+                            });
+                            localStorage.setItem('stardive_mock_files', JSON.stringify(updated));
+                            setFiles(updated);
+                            triggerToast(`File replaced: ${file.name}`, "success");
+                            // Update dynamic drawer if selected
+                            if (selectedFile && selectedFile.id === replacementId) {
+                                setSelectedFile(updated.find(f => f.id === replacementId));
+                            }
+                        } else {
+                            // POST upload logic
+                            const newId = `file-${Math.random().toString(36).substring(2, 6)}`;
+                            const isImg = file.type.startsWith('image/');
+                            const newMockFile = {
+                                id: newId,
+                                name: file.name,
+                                mime_type: file.type || 'application/octet-stream',
+                                size_bytes: file.size,
+                                created_at: new Date().toISOString(),
+                                url: isImg ? URL.createObjectURL(file) : null,
+                                content: isImg ? null : `Plaintext buffer view of ${file.name}. Raw size: ${file.size} bytes.`
+                            };
+                            
+                            const updated = [newMockFile, ...currentMock];
+                            localStorage.setItem('stardive_mock_files', JSON.stringify(updated));
+                            setFiles(updated);
+                            triggerToast(`Uploaded successfully: ${file.name}`, "success");
+                        }
+
+                        setUploading(false);
+                        setUploadProgress(0);
+                        setReplaceTargetId(null);
+                    }, 1200);
+
+                    return;
+                }
+
+                // Production Real Backend Call
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const headers = {};
+                    if (apiKey) {
+                        headers['Authorization'] = `Bearer ${apiKey}`;
+                    }
+
+                    let response;
+                    setUploadProgress(40);
+                    
+                    if (replacementId) {
+                        // PUT /v1/files/{id}
+                        response = await fetch(`${apiUrl}/v1/files/${replacementId}`, {
+                            method: 'PUT',
+                            headers,
+                            body: formData
+                        });
+                    } else {
+                        // POST /v1/files
+                        response = await fetch(`${apiUrl}/v1/files`, {
+                            method: 'POST',
+                            headers,
+                            body: formData
+                        });
+                    }
+
+                    setUploadProgress(80);
+
+                    if (!response.ok) {
+                        throw new Error(`Upload returned status ${response.status}: ${response.statusText}`);
+                    }
+
+                    setUploadProgress(100);
+                    triggerToast(replacementId ? `Replaced ${file.name} successfully!` : `Uploaded ${file.name} successfully!`, "success");
+
+                    const payload = await response.json().catch(() => null);
+                    if (payload?.file) {
+                        const savedFile = normalizeServerFile(payload.file);
+                        setFiles(current => {
+                            if (replacementId) {
+                                return current.map(item => item.id === replacementId ? savedFile : item);
+                            }
+                            return [savedFile, ...current.filter(item => item.id !== savedFile.id)];
+                        });
+                    }
+
+                    await fetchFileList();
+                    
+                    if (replacementId && selectedFile?.id === replacementId) {
+                        // Refresh details view
+                        setSelectedFile(null);
+                    }
+                } catch (err) {
+                    triggerToast(`Upload pipeline error: ${err.message}`, "error");
+                } finally {
+                    setUploading(false);
+                    setUploadProgress(0);
+                    setReplaceTargetId(null);
+                }
+            };
+
+            // Delete File Handler
+            const handleDeleteFile = async (id, name) => {
+                if (useSimulated || apiStatus === 'offline') {
+                    const currentMock = JSON.parse(localStorage.getItem('stardive_mock_files') || JSON.stringify(DEMO_FILES));
+                    const filtered = currentMock.filter(item => item.id !== id);
+                    localStorage.setItem('stardive_mock_files', JSON.stringify(filtered));
+                    setFiles(filtered);
+                    triggerToast(`Removed construct: ${name}`, "info");
+                    if (selectedFile?.id === id) {
+                        setSelectedFile(null);
+                    }
+                    return;
+                }
+
+                try {
+                    const headers = {};
+                    if (apiKey) {
+                        headers['Authorization'] = `Bearer ${apiKey}`;
+                    }
+
+                    const response = await fetch(`${apiUrl}/v1/files/${id}`, {
+                        method: 'DELETE',
+                        headers
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Delete failed. Server returned ${response.status}`);
+                    }
+
+                    triggerToast(`Deleted ${name} from storage.`, "success");
+                    if (selectedFile?.id === id) {
+                        setSelectedFile(null);
+                    }
+                    await fetchFileList();
+                } catch (err) {
+                    triggerToast(`Error deleting file: ${err.message}`, "error");
+                }
+            };
+
+            // Format bytes helper
+            const formatBytes = (bytes, decimals = 2) => {
+                if (!bytes || bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            };
+
+            // Filter logic based on live search bar input
+            const filteredFiles = files.filter(file => {
+                const query = searchQuery.toLowerCase();
+                return (
+                    file.name.toLowerCase().includes(query) ||
+                    (file.mime_type && file.mime_type.toLowerCase().includes(query)) ||
+                    (file.id && file.id.toLowerCase().includes(query))
+                );
+            });
+
+            // Calculate overall storage used
+            const totalBytesUsed = files.reduce((acc, file) => acc + (file.size_bytes || 0), 0);
+
+            return (
+                <div className="min-h-screen flex flex-col relative">
+                    {/* Deep Cosmic Background elements and glow filters */}
+                    <div className="fixed inset-0 bg-grid pointer-events-none z-[-2]"></div>
+                    <div className="fixed top-[5%] left-[-5%] w-[45%] h-[45%] bg-zinc-800/10 rounded-full blur-[120px] pointer-events-none z-[-1] animate-glow-shift"></div>
+                    <div className="fixed bottom-[-5%] right-[-5%] w-[40%] h-[40%] bg-zinc-700/10 rounded-full blur-[100px] pointer-events-none z-[-1] animate-glow-shift" style={{animationDelay: '3s'}}></div>
+
+                    {/* Header */}
+                    <Header 
+                        config={{ apiUrl, apiKey, useSimulated }} 
+                        onOpenSettings={() => setShowSettingsModal(true)} 
+                        apiStatus={apiStatus} 
+                    />
+
+                    {/* Main Workspace Frame */}
+                    <main className="flex-grow pt-28 pb-16 px-4 md:px-12 max-w-7xl mx-auto w-full flex flex-col gap-8">
+                        
+                        {/* Interactive Banner / Dashboard Intro */}
+                        <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-8 items-center bg-zinc-950/40 border border-zinc-900 rounded-[2rem] p-6 md:p-8 backdrop-blur-xl relative overflow-hidden shadow-2xl">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-white/[0.02] blur-xl rounded-full"></div>
+                            
+                            {/* Left Text details */}
+                            <div className="lg:col-span-2 flex flex-col gap-3">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 border border-zinc-800 rounded-full w-fit bg-zinc-900/60 text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+                                    <span className="w-1.5 h-1.5 bg-zinc-100 rounded-full animate-ping"></span>
+                                    Autonomous Storage Plane
+                                </div>
+                                <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-white">
+                                    System <span className="text-gradient">Space Terminal</span>
+                                </h1>
+                                <p className="text-sm text-zinc-400 max-w-xl font-light leading-relaxed">
+                                    Streamline uploads, verify data hashes, replace active payloads, and view image renders across your cluster directly in your browser. 
+                                </p>
+
+                                {/* System stats strip */}
+                                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-zinc-900/80">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-mono uppercase text-zinc-500">Active Node</span>
+                                        <span className="text-xs font-mono font-medium text-zinc-300 truncate" title={apiUrl}>
+                                            {useSimulated ? 'Local Sandbox' : apiUrl.replace(/^https?:\/\//, '')}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-mono uppercase text-zinc-500">Payload Count</span>
+                                        <span className="text-xs font-mono font-medium text-zinc-300">{files.length} active</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-mono uppercase text-zinc-500">Total Volume</span>
+                                        <span className="text-xs font-mono font-medium text-zinc-300">{formatBytes(totalBytesUsed)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Isometric illustration */}
+                            <div className="hidden lg:block">
+                                <IsometricDecorative />
+                            </div>
+                        </div>
+
+                        {/* Control actions & Upload Box */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            
+                            {/* Drag & Drop File Upload Panel */}
+                            <div className="lg:col-span-1 flex flex-col gap-4">
+                                <div className="glass-panel p-6 rounded-[2rem] flex flex-col gap-4 h-full">
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="font-display font-semibold text-white tracking-tight flex items-center gap-2 text-sm uppercase text-zinc-300">
+                                            <Icons.Upload />
+                                            Upload Payload
+                                        </h3>
+                                        {uploading && (
+                                            <span className="text-xs font-mono text-zinc-400 animate-pulse">Processing...</span>
+                                        )}
+                                    </div>
+
+                                    {/* Interactive Drop area */}
+                                    <div 
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="flex-grow flex flex-col items-center justify-center border border-dashed border-zinc-800 hover:border-zinc-500 rounded-2xl p-6 text-center cursor-pointer bg-zinc-950/20 hover:bg-zinc-900/30 transition-all duration-300 relative group"
+                                    >
+                                        <input 
+                                            type="file" 
+                                            ref={fileInputRef} 
+                                            onChange={(e) => handleFileUpload(e)}
+                                            className="hidden" 
+                                        />
+                                        
+                                        <div className="w-12 h-12 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center text-zinc-400 group-hover:text-white group-hover:border-zinc-500 group-hover:scale-105 transition-all duration-300 mb-4 shadow-lg">
+                                            <Icons.Upload />
+                                        </div>
+
+                                        <p className="text-xs font-medium text-zinc-300 group-hover:text-white mb-1">Click to browse your device</p>
+                                        <p className="text-[10px] text-zinc-500 font-mono">Accepts images, code, binaries & logs</p>
+                                        
+                                        {/* Dynamic loading progress bar */}
+                                        {uploading && (
+                                            <div className="absolute inset-0 bg-[#020202]/90 flex flex-col items-center justify-center p-4 rounded-2xl">
+                                                <div className="w-12 h-12 rounded-full border-t-2 border-r-2 border-white animate-spin mb-4"></div>
+                                                <div className="w-full max-w-[150px] bg-zinc-800 h-1 rounded-full overflow-hidden">
+                                                    <div className="bg-white h-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                                                </div>
+                                                <p className="text-[10px] font-mono text-zinc-400 mt-2">Uploading: {uploadProgress}%</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Command Line Help Card */}
+                                    <div className="bg-zinc-950/60 border border-zinc-900 p-4 rounded-xl flex flex-col gap-2 font-mono text-[11px] text-zinc-400">
+                                        <div className="flex items-center gap-1.5 text-[10px] uppercase text-zinc-500 font-bold">
+                                            <Icons.Terminal /> Shell Alternative
+                                        </div>
+                                        <code className="bg-zinc-950 p-2 rounded text-zinc-300 break-all select-all">
+                                            curl -F "file=@main.lua" {useSimulated ? 'http://localhost:8080' : apiUrl}/v1/files
+                                        </code>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Files Explorer Terminal */}
+                            <div className="lg:col-span-2 glass-panel p-6 rounded-[2rem] flex flex-col gap-6">
+                                
+                                {/* Search and Filtering Header */}
+                                <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center">
+                                    <div className="relative flex-grow max-w-md">
+                                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+                                            <Icons.Search />
+                                        </span>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Filter constructs by name, ID, or type..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 focus:border-zinc-500 focus:ring-0 text-xs rounded-xl text-zinc-100 placeholder-zinc-500 font-mono transition-all duration-200"
+                                        />
+                                        {searchQuery && (
+                                            <button 
+                                                onClick={() => setSearchQuery('')}
+                                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-white"
+                                            >
+                                                <Icons.Close />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 self-end sm:self-auto">
+                                        {/* List / Grid Toggles */}
+                                        <div className="flex items-center bg-zinc-950 rounded-lg p-0.5 border border-zinc-900">
+                                            <button 
+                                                onClick={() => setViewMode('grid')}
+                                                className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                                title="Grid layout"
+                                            >
+                                                <Icons.Grid />
+                                            </button>
+                                            <button 
+                                                onClick={() => setViewMode('list')}
+                                                className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                                title="List layout"
+                                            >
+                                                <Icons.List />
+                                            </button>
+                                        </div>
+
+                                        {/* Refresh Button */}
+                                        <button 
+                                            onClick={verifyHealthAndFetch}
+                                            disabled={loading}
+                                            className="p-2 text-zinc-400 hover:text-white bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 rounded-lg transition-all duration-200 disabled:opacity-50"
+                                            title="Sync files"
+                                        >
+                                            <span className={loading ? 'animate-spin block' : 'block'}><Icons.Refresh /></span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Main files catalog list / grid */}
+                                {loading ? (
+                                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                        <div className="w-10 h-10 rounded-full border-t-2 border-r-2 border-white animate-spin"></div>
+                                        <p className="text-xs font-mono text-zinc-500 tracking-wider">Syncing with cluster storage...</p>
+                                    </div>
+                                ) : filteredFiles.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-zinc-900 rounded-2xl bg-zinc-950/20">
+                                        <div className="w-12 h-12 rounded-full bg-zinc-900/50 flex items-center justify-center text-zinc-600 mb-4">
+                                            <Icons.File />
+                                        </div>
+                                        <h4 className="text-sm font-semibold text-zinc-300">No constructs found</h4>
+                                        <p className="text-xs text-zinc-500 mt-1 max-w-xs font-light">Try uploading a new file or configuring a direct cluster API connection.</p>
+                                    </div>
+                                ) : viewMode === 'grid' ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                        {filteredFiles.map(file => {
+                                            const isImage = file.mime_type && file.mime_type.startsWith('image/');
+                                            return (
+                                                <div 
+                                                    key={file.id}
+                                                    onClick={() => setSelectedFile(file)}
+                                                    className="glass-panel glass-card-hover rounded-2xl overflow-hidden cursor-pointer flex flex-col group relative"
+                                                >
+                                                    {/* Preview area */}
+                                                    <div className="aspect-[16/10] bg-[#050505] relative overflow-hidden flex items-center justify-center border-b border-zinc-900">
+                                                        {isImage ? (
+                                                            <img 
+                                                                src={file.url || (useSimulated ? file.url : `${apiUrl}/v1/files/${file.id}`)} 
+                                                                alt={file.name}
+                                                                onError={(e) => {
+                                                                    // Show beautiful geometric placeholder if image load fails
+                                                                    e.target.style.display = 'none';
+                                                                    e.target.nextSibling.style.display = 'flex';
+                                                                }}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                            />
+                                                        ) : null}
+                                                        
+                                                        {/* Generic File Icon view (and fallback if image breaks) */}
+                                                        <div className={`absolute inset-0 flex flex-col items-center justify-center p-4 gap-2 text-zinc-500 ${isImage ? 'hidden' : 'flex'}`}>
+                                                            <div className="w-10 h-10 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-white transition-all">
+                                                                {file.name.endsWith('.lua') || file.name.endsWith('.js') || file.name.endsWith('.sh') ? <Icons.Terminal /> : <Icons.FileText />}
+                                                            </div>
+                                                            <span className="text-[10px] font-mono text-zinc-400 truncate max-w-full">{file.name.split('.').pop().toUpperCase()} FILE</span>
+                                                        </div>
+
+                                                        {/* Floating hover view badge */}
+                                                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-950/95 backdrop-blur-md border border-zinc-800 p-1.5 rounded-lg text-zinc-300">
+                                                            <Icons.Eye />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Details body */}
+                                                    <div className="p-4 flex flex-col gap-1.5">
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <h4 className="text-xs font-semibold text-zinc-200 truncate group-hover:text-white transition-colors" title={file.name}>
+                                                                {file.name}
+                                                            </h4>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-[10px] font-mono text-zinc-500">
+                                                            <span>{formatBytes(file.size_bytes)}</span>
+                                                            <span className="bg-zinc-900/60 px-2 py-0.5 rounded border border-zinc-800/80 truncate max-w-[100px] text-zinc-400">{file.id}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    /* List Mode */
+                                    <div className="flex flex-col gap-2">
+                                        <div className="grid grid-cols-12 gap-4 px-4 py-2 text-[10px] font-mono text-zinc-500 uppercase tracking-widest border-b border-zinc-900/60">
+                                            <div className="col-span-5">Name</div>
+                                            <div className="col-span-3">MIME Type</div>
+                                            <div className="col-span-2 text-right">Size</div>
+                                            <div className="col-span-2 text-right">ID</div>
+                                        </div>
+                                        {filteredFiles.map(file => (
+                                            <div 
+                                                key={file.id}
+                                                onClick={() => setSelectedFile(file)}
+                                                className="grid grid-cols-12 gap-4 items-center px-4 py-3 bg-zinc-950/20 hover:bg-zinc-900/40 border border-zinc-900 hover:border-zinc-800 rounded-xl cursor-pointer group transition-all"
+                                            >
+                                                <div className="col-span-5 flex items-center gap-3">
+                                                    <div className="text-zinc-500 group-hover:text-white">
+                                                        {file.mime_type?.startsWith('image/') ? <Icons.File /> : <Icons.Terminal />}
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-zinc-300 group-hover:text-white truncate" title={file.name}>
+                                                        {file.name}
+                                                    </span>
+                                                </div>
+                                                <div className="col-span-3 text-[11px] font-mono text-zinc-500 truncate">
+                                                    {file.mime_type || 'octet-stream'}
+                                                </div>
+                                                <div className="col-span-2 text-right text-[11px] font-mono text-zinc-400">
+                                                    {formatBytes(file.size_bytes)}
+                                                </div>
+                                                <div className="col-span-2 text-right">
+                                                    <span className="text-[10px] font-mono bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800/60 text-zinc-500 group-hover:text-zinc-300">
+                                                        {file.id}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+
+                    </main>
+
+                    {/* Custom Alert/Notification System (Embedded Toast) */}
+                    {alertMessage && (
+                        <div className="fixed bottom-6 right-6 z-50 animate-fade-up max-w-sm">
+                            <div className={`p-4 rounded-xl shadow-2xl border backdrop-blur-md flex items-start gap-3 ${
+                                alertMessage.type === 'success' ? 'bg-zinc-950/95 border-green-500/30 text-zinc-200' :
+                                alertMessage.type === 'warning' ? 'bg-zinc-950/95 border-amber-500/30 text-zinc-200' :
+                                alertMessage.type === 'error' ? 'bg-zinc-950/95 border-rose-500/30 text-zinc-200' :
+                                'bg-zinc-950/95 border-zinc-800 text-zinc-200'
+                            }`}>
+                                <div className={`mt-0.5 ${
+                                    alertMessage.type === 'success' ? 'text-green-400' :
+                                    alertMessage.type === 'warning' ? 'text-amber-400' :
+                                    alertMessage.type === 'error' ? 'text-rose-400' :
+                                    'text-zinc-400'
+                                }`}>
+                                    {alertMessage.type === 'success' ? <Icons.Check /> : <Icons.AlertCircle />}
+                                </div>
+                                <div className="flex-grow flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-mono uppercase text-zinc-500">System Notification</span>
+                                    <p className="text-xs font-light">{alertMessage.message}</p>
+                                </div>
+                                <button onClick={() => setAlertMessage(null)} className="text-zinc-500 hover:text-white transition-colors">
+                                    <Icons.Close />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Detailed Inspector Modal Panel (Slide-over overlay drawer) */}
+                    {selectedFile && (
+                        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fade-up">
+                            <div className="absolute inset-0" onClick={() => setSelectedFile(null)}></div>
+                            
+                            <div className="relative w-full max-w-lg bg-[#050507] border-l border-zinc-800 h-full shadow-2xl flex flex-col">
+                                
+                                {/* Inspector Header */}
+                                <div className="p-6 border-b border-zinc-900 flex justify-between items-center">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Construct Inspector</span>
+                                        <h3 className="text-sm font-semibold text-white font-mono tracking-tight truncate max-w-xs">{selectedFile.name}</h3>
+                                    </div>
+                                    <button 
+                                        onClick={() => setSelectedFile(null)}
+                                        className="p-1.5 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg transition-colors"
+                                    >
+                                        <Icons.Close />
+                                    </button>
+                                </div>
+
+                                {/* Inspector Content Body */}
+                                <div className="flex-grow overflow-y-auto p-6 flex flex-col gap-6">
+                                    
+                                    {/* Responsive Interactive Preview Block */}
+                                    <div className="w-full aspect-video bg-[#020202] rounded-2xl overflow-hidden border border-zinc-900 flex items-center justify-center relative">
+                                        {selectedFile.mime_type?.startsWith('image/') ? (
+                                            <img 
+                                                src={selectedFile.url || (useSimulated ? selectedFile.url : `${apiUrl}/v1/files/${selectedFile.id}`)} 
+                                                alt={selectedFile.name}
+                                                className="w-full h-full object-contain"
+                                            />
+                                        ) : selectedFile.content || selectedFile.id === 'file-3b8e' || selectedFile.id === 'file-1f2a' || selectedFile.id === 'file-ec09' ? (
+                                            <pre className="w-full h-full p-4 overflow-auto text-[10px] font-mono text-zinc-400 bg-zinc-950 text-left whitespace-pre">
+                                                {selectedFile.content || (selectedFile.id === 'file-3b8e' ? DEMO_FILES[1].content : selectedFile.id === 'file-1f2a' ? DEMO_FILES[2].content : DEMO_FILES[4].content)}
+                                            </pre>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-3 text-zinc-500">
+                                                <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+                                                    <Icons.FileText />
+                                                </div>
+                                                <span className="text-xs font-mono">No direct view available</span>
+                                                <span className="text-[10px] text-zinc-600 font-mono">Standard binary stream</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Action Panel Group */}
+                                    <div className="flex flex-col gap-3">
+                                        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Vault operations</div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {/* Download */}
+                                            <a 
+                                                href={selectedFile.url || `${apiUrl}/v1/files/${selectedFile.id}`}
+                                                download={selectedFile.name}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="flex items-center justify-center gap-2 px-4 py-3 bg-white text-black hover:bg-zinc-200 rounded-xl font-medium text-xs text-center transition-colors"
+                                            >
+                                                <Icons.Download /> Download File
+                                            </a>
+
+                                            {/* PUT payload replacement action */}
+                                            <button 
+                                                onClick={() => {
+                                                    setReplaceTargetId(selectedFile.id);
+                                                    replaceInputRef.current?.click();
+                                                }}
+                                                className="flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-200 rounded-xl font-medium text-xs transition-colors"
+                                            >
+                                                <Icons.Replace /> Replace Content
+                                            </button>
+                                            
+                                            <input 
+                                                type="file" 
+                                                ref={replaceInputRef} 
+                                                onChange={(e) => handleFileUpload(e, replaceTargetId)}
+                                                className="hidden" 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Meta Attributes Panel */}
+                                    <div className="flex flex-col gap-3 bg-zinc-950 border border-zinc-900 p-5 rounded-2xl font-mono text-xs">
+                                        <div className="text-[10px] text-zinc-500 uppercase tracking-widest border-b border-zinc-900 pb-2 mb-2">Metadata Attributes</div>
+                                        <div className="space-y-3.5">
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">PAYLOAD ID:</span>
+                                                <span className="text-zinc-300">{selectedFile.id}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">MIME CLASSIFIER:</span>
+                                                <span className="text-zinc-300 truncate max-w-[200px]" title={selectedFile.mime_type}>{selectedFile.mime_type || 'application/octet-stream'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">FILE CAPACITY:</span>
+                                                <span className="text-zinc-300">{formatBytes(selectedFile.size_bytes)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">COMMIT TIMESTAMP:</span>
+                                                <span className="text-zinc-300 truncate max-w-[200px]">{selectedFile.created_at ? new Date(selectedFile.created_at).toLocaleString() : 'Recent Session'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Danger Zone */}
+                                    <div className="mt-auto pt-6 border-t border-zinc-900">
+                                        <button 
+                                            onClick={() => {
+                                                if (confirm(`Confirm deletion of payload ${selectedFile.name}? This action cannot be reversed.`)) {
+                                                    handleDeleteFile(selectedFile.id, selectedFile.name);
+                                                }
+                                            }}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-rose-950/20 hover:bg-rose-950/40 border border-rose-900/30 text-rose-300 hover:text-rose-200 rounded-xl font-medium text-xs transition-colors"
+                                        >
+                                            <Icons.Trash /> Delete from Vault
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* API Settings Modal Dialog */}
+                    {showSettingsModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-up">
+                            <div className="absolute inset-0" onClick={() => setShowSettingsModal(false)}></div>
+                            
+                            <div className="relative w-full max-w-lg bg-[#0a0a0c] border border-zinc-800 rounded-[2.5rem] overflow-hidden p-6 md:p-8 shadow-2xl flex flex-col gap-6">
+                                
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full border border-zinc-700 bg-zinc-900 flex items-center justify-center text-zinc-300">
+                                            <Icons.Settings />
+                                        </div>
+                                        <h3 className="font-display font-semibold text-white text-md tracking-tight">Vault Connection Setup</h3>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowSettingsModal(false)}
+                                        className="p-1.5 text-zinc-400 hover:text-white bg-zinc-900 rounded-lg"
+                                    >
+                                        <Icons.Close />
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-col gap-4 text-xs font-mono">
+                                    
+                                    {/* Simulator Toggle Mode */}
+                                    <div className="bg-zinc-950 p-4 border border-zinc-900 rounded-xl flex items-center justify-between gap-4">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-zinc-200 font-semibold uppercase text-[10px]">Use Local Simulated Sandbox</span>
+                                            <p className="text-[11px] text-zinc-500 font-light font-sans leading-normal">Runs completely on simulated state. Switch this off to connect your live Rust stardive-api endpoint directly.</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => setUseSimulated(!useSimulated)}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${useSimulated ? 'bg-zinc-300' : 'bg-zinc-800'}`}
+                                        >
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform ${useSimulated ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </button>
+                                    </div>
+
+                                    {/* API Endpoint Input Field */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-zinc-500 uppercase text-[10px]">stardive-api Base URL Address</label>
+                                        <input 
+                                            type="text"
+                                            value={apiUrl}
+                                            onChange={(e) => setApiUrl(e.target.value)}
+                                            disabled={useSimulated}
+                                            placeholder="e.g. http://localhost:8080 or https://api.stardive.space"
+                                            className="w-full px-4 py-3 bg-zinc-950 border border-zinc-900 rounded-xl text-zinc-300 text-xs tracking-wide focus:border-zinc-500 disabled:opacity-40 font-mono"
+                                        />
+                                    </div>
+
+                                    {/* Security API Key Input Field */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-zinc-500 uppercase text-[10px] flex items-center gap-1.5">
+                                            STARDIVE_API_KEY Token <span className="text-[9px] text-zinc-600 font-normal lowercase">(optional)</span>
+                                        </label>
+                                        <input 
+                                            type="password"
+                                            value={apiKey}
+                                            onChange={(e) => setApiKey(e.target.value)}
+                                            disabled={useSimulated}
+                                            placeholder="Enforces authorization headers if API is locked"
+                                            className="w-full px-4 py-3 bg-zinc-950 border border-zinc-900 rounded-xl text-zinc-300 text-xs tracking-wide focus:border-zinc-500 disabled:opacity-40 font-mono"
+                                        />
+                                    </div>
+
+                                    {/* Dynamic Check Output details */}
+                                    <div className="text-[10px] text-zinc-600 bg-zinc-950/40 p-3.5 border border-zinc-900 rounded-xl">
+                                        <span className="text-zinc-500 uppercase font-bold">Health Response Status:</span>
+                                        <div className="mt-1 flex justify-between">
+                                            <span>Target health checked:</span>
+                                            <span className="text-zinc-400 font-bold">{apiHealth.checkedAt || 'Never'}</span>
+                                        </div>
+                                        <div className="mt-1 flex justify-between">
+                                            <span>Current system route:</span>
+                                            <span className={`font-bold ${apiHealth.up ? 'text-green-400' : 'text-rose-400'}`}>{apiHealth.up ? 'ONLINE/OK' : 'OFFLINE/UNREACHABLE'}</span>
+                                        </div>
+                                        {apiHealth.error && <p className="text-rose-400 mt-1 truncate">Error details: {apiHealth.error}</p>}
+                                    </div>
+
+                                </div>
+
+                                <div className="flex gap-3 justify-end mt-2">
+                                    <button 
+                                        onClick={() => setShowSettingsModal(false)}
+                                        className="px-6 py-3 border border-zinc-800 text-zinc-400 hover:text-white rounded-full text-xs transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={() => saveSettings(apiUrl, apiKey, useSimulated)}
+                                        className="px-6 py-3 bg-white text-black hover:bg-zinc-200 rounded-full text-xs font-semibold transition-colors"
+                                    >
+                                        Apply Settings
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Footer */}
+                    <footer className="mt-auto relative z-10 py-10 bg-[#020202]">
+                        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-zinc-800/40 to-transparent"></div>
+                        <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-5 h-5 rounded-full border border-zinc-700/80 flex items-center justify-center bg-zinc-900 shadow-inner"></div>
+                                <span className="font-display font-bold tracking-[0.2em] text-xs text-zinc-300">STARDIVE SYSTEMS</span>
+                            </div>
+                            
+                            <div className="text-[10px] font-mono text-zinc-600 tracking-wider">
+                                &copy; 2026 STARDIVE. Licensed for secure spatial database interactions.
+                            </div>
+                            
+                            <div className="flex gap-6 text-xs text-zinc-500 font-medium">
+                                <a href="#" className="hover:text-white transition-all">Twitter</a>
+                                <a href="#" className="hover:text-white transition-all">GitHub</a>
+                                <a href="#" className="hover:text-white transition-all">Discord</a>
+                            </div>
+                        </div>
+                    </footer>
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
