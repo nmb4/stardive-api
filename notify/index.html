@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0d0c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Stardive Relay">
+    <meta name="description" content="A quiet relay for Stardive notifications.">
+    <link rel="manifest" href="/notify/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/notify/icons/apple-touch-icon.png">
+    <link rel="icon" href="/notify/icons/icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/notify/styles.css">
+    <title>Stardive Relay</title>
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <main>
+      <header class="masthead">
+        <a class="wordmark" href="/notify/" aria-label="Stardive Relay home">
+          <span class="star">✦</span>
+          <span>STAR/DIVE</span>
+        </a>
+        <div class="live-state" id="liveState">
+          <span class="pulse"></span>
+          <span id="liveLabel">OFFLINE</span>
+        </div>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">PERSONAL MESSAGE RELAY · 01</p>
+        <h1>Messages don’t<br>wait for a desk.</h1>
+        <p class="lede">Carry every signal from Stardive with you. Once installed, Relay can notify you even when it isn’t open.</p>
+        <div class="orbit" aria-hidden="true">
+          <div class="orbit-ring ring-one"></div>
+          <div class="orbit-ring ring-two"></div>
+          <div class="orbit-core">✦</div>
+          <span class="satellite satellite-a"></span>
+          <span class="satellite satellite-b"></span>
+        </div>
+      </section>
+
+      <section class="console" aria-labelledby="setupTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">RECEIVER SETUP</p>
+            <h2 id="setupTitle">Tune this device</h2>
+          </div>
+          <span class="step-count">02 / 03</span>
+        </div>
+
+        <div class="install-note" id="installNote" hidden>
+          <div class="install-icon">↑</div>
+          <div>
+            <strong>Install Relay first</strong>
+            <p>In Safari, tap Share, then <em>Add to Home Screen</em>. Open Relay from your home screen to enable notifications.</p>
+          </div>
+        </div>
+
+        <form id="connectionForm">
+          <label>
+            <span>Stardive API</span>
+            <input id="apiUrl" name="apiUrl" type="url" inputmode="url" value="https://api.stardive.space" autocomplete="url" required>
+          </label>
+          <label>
+            <span>Access key <small>only stored on this device</small></span>
+            <div class="secret-field">
+              <input id="apiKey" name="apiKey" type="password" autocomplete="off" placeholder="Bearer key">
+              <button id="revealKey" type="button" aria-label="Show access key">SHOW</button>
+            </div>
+          </label>
+          <button class="primary-action" id="connectButton" type="submit">
+            <span id="connectLabel">Connect receiver</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+          <button class="disconnect-action" id="disconnectButton" type="button" hidden>Disconnect this device</button>
+        </form>
+        <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="logbook" aria-labelledby="logTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">LOCAL LOGBOOK</p>
+            <h2 id="logTitle">Recent signals</h2>
+          </div>
+          <button class="text-action" id="clearLog" type="button">CLEAR</button>
+        </div>
+        <div class="empty-log" id="emptyLog">
+          <span>◎</span>
+          <p>The air is quiet.<br>New signals will appear here.</p>
+        </div>
+        <ol class="signal-list" id="signalList"></ol>
+      </section>
+
+      <footer>
+        <span>STARDIVE RELAY</span>
+        <span>PRIVATE BY DESIGN · WEB PUSH</span>
+      </footer>
+    </main>
+    <script src="/notify/app.js" defer></script>
+  </body>
+</html>

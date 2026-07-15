@@ -10,6 +10,7 @@ pub struct ModuleFlags {
     pub render: bool,
     pub lostandfound: bool,
     pub orbit: bool,
+    pub notifications: bool,
     pub installers: bool,
     pub eternal: bool,
 }
@@ -24,6 +25,7 @@ pub struct ServerConfig {
     pub api_key: Option<String>,
     pub max_upload_bytes: u64,
     pub max_snippet_chars: usize,
+    pub vapid_subject: String,
     pub modules: ModuleFlags,
 }
 
@@ -69,9 +71,13 @@ impl ServerConfig {
             render: read_bool("STARDIVE_ENABLE_RENDER", true),
             lostandfound: read_bool("STARDIVE_ENABLE_LOSTANDFOUND", true),
             orbit: read_bool("STARDIVE_ENABLE_ORBIT", true),
+            notifications: read_bool("STARDIVE_ENABLE_NOTIFICATIONS", true),
             installers: read_bool("STARDIVE_ENABLE_INSTALLERS", true),
             eternal: read_bool("STARDIVE_ENABLE_ETERNAL", true),
         };
+
+        let vapid_subject = std::env::var("STARDIVE_VAPID_SUBJECT")
+            .unwrap_or_else(|_| "mailto:admin@stardive.space".to_string());
 
         Ok(Self {
             bind_addr,
@@ -82,6 +88,7 @@ impl ServerConfig {
             api_key,
             max_upload_bytes,
             max_snippet_chars,
+            vapid_subject,
             modules,
         })
     }

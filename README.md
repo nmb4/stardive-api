@@ -76,6 +76,10 @@ cargo run -p stardive -- --help
 - `GET /orbit/scripts`
 - `GET /orbit/scripts/{id-or-name}`
 - `POST /orbit/vibecode` (`prompt`, optional `script_id`/`name`)
+- `GET /notifications/vapid-public-key`
+- `POST /notifications/subscriptions` (browser Web Push subscription)
+- `DELETE /notifications/subscriptions/{id}`
+- `POST /notifications` (broadcast to every subscribed device)
 - `GET /installers`
 - `GET /installers/{name}`
 - `GET /eternal`
@@ -125,6 +129,29 @@ curl -X POST http://localhost:8080/v1/orbit/vibecode \
 
 Each vibecode job runs opencode in an isolated job directory with a deny-by-default `opencode.json`. The job can read its prompt, optional `input.lua`, copied `inspiration/*.lua` scripts, and the local Orbit skill; it can edit only `output.lua`; bash is denied except `stylua` and `selene` validation commands.
 
+### Notification API and companion app
+
+The notification module provides standards-based Web Push delivery. It automatically creates a VAPID signing key at `<STARDIVE_DATA_DIR>/notifications/vapid_private.key` and stores browser subscriptions alongside it in `subscriptions.json`. Keep that directory persistent: changing the key invalidates existing browser subscriptions.
+
+The companion PWA is embedded in `stardive-api` and served from `/notify/` on the same origin. On iPhone or iPad, open `https://api.stardive.space/notify/` in Safari, use **Share → Add to Home Screen**, open the installed app, enter the API URL and optional `STARDIVE_API_KEY`, then tap **Connect receiver**. Home-screen web push requires iOS/iPadOS 16.4 or newer.
+
+Broadcast a notification to every subscribed device:
+
+```bash
+curl -X POST https://api.stardive.space/v1/notifications \
+  -H "authorization: Bearer $STARDIVE_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "title": "New message in #general",
+    "body": "Ada: The desktop build is ready to try.",
+    "channel": "general",
+    "url": "https://chat.example.com/channels/general",
+    "tag": "chat-general"
+  }'
+```
+
+The response reports how many subscriptions were delivered, failed, or removed because their push endpoint expired. `title` is required; `body`, `channel`, `url`, `icon`, and `tag` shape the system notification. Links must be relative or HTTPS.
+
 ## Configuration
 
 `stardive-api` environment variables:
@@ -136,7 +163,8 @@ Each vibecode job runs opencode in an isolated job directory with a deny-by-defa
 - `STARDIVE_API_KEY` (optional; when set, bearer auth is enforced except `/v1/health`)
 - `STARDIVE_MAX_UPLOAD_BYTES` (default `1073741824`, used by Orbit script uploads; `/files` uploads are unbounded)
 - `STARDIVE_MAX_SNIPPET_CHARS` (default `20000`)
-- `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|LOSTANDFOUND|ORBIT|INSTALLERS|ETERNAL` (default `true`)
+- `STARDIVE_VAPID_SUBJECT` (default `mailto:admin@stardive.space`; set this to your own `mailto:` or HTTPS contact)
+- `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|LOSTANDFOUND|ORBIT|NOTIFICATIONS|INSTALLERS|ETERNAL` (default `true`)
 
 Logging behavior:
 - request and response logs are emitted at `info` level

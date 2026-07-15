@@ -3,6 +3,7 @@ WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY files-webapp.html ./files-webapp.html
+COPY notify ./notify
 COPY installers ./installers
 COPY eternal ./eternal
 RUN cargo build --release -p stardive-api

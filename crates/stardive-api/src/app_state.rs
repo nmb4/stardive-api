@@ -8,7 +8,9 @@ use crate::{
     config::ServerConfig,
     file_store::FileStore,
     modules::ModuleDef,
-    modules::{lostandfound::LostAndFoundStore, orbit::OrbitStore},
+    modules::{
+        lostandfound::LostAndFoundStore, notifications::NotificationStore, orbit::OrbitStore,
+    },
 };
 
 #[derive(Debug, Clone)]
@@ -73,6 +75,7 @@ pub struct AppState {
     pub module_defs: Arc<Vec<ModuleDef>>,
     pub lostandfound_store: Arc<RwLock<LostAndFoundStore>>,
     pub orbit_store: Arc<OrbitStore>,
+    pub notification_store: Arc<NotificationStore>,
 }
 
 impl AppState {
@@ -84,6 +87,7 @@ impl AppState {
         module_defs: Arc<Vec<ModuleDef>>,
         lostandfound_store: Arc<RwLock<LostAndFoundStore>>,
         orbit_store: Arc<OrbitStore>,
+        notification_store: Arc<NotificationStore>,
     ) -> Self {
         Self {
             config,
@@ -93,6 +97,7 @@ impl AppState {
             module_defs,
             lostandfound_store,
             orbit_store,
+            notification_store,
         }
     }
 }

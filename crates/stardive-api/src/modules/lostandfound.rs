@@ -574,6 +574,7 @@ mod tests {
             api_key: None,
             max_upload_bytes: 1_024_000,
             max_snippet_chars: 20_000,
+            vapid_subject: "mailto:test@example.com".to_string(),
             modules: ModuleFlags {
                 health: true,
                 search: true,
@@ -581,6 +582,7 @@ mod tests {
                 render: true,
                 lostandfound: true,
                 orbit: true,
+                notifications: true,
                 installers: true,
                 eternal: true,
             },
@@ -615,6 +617,12 @@ mod tests {
             crate::modules::orbit::new_store(config.data_dir.clone())
                 .await
                 .expect("orbit store"),
+            crate::modules::notifications::new_store(
+                data_dir.join("notification-data"),
+                "mailto:test@example.com".to_string(),
+            )
+            .await
+            .expect("notification store"),
         );
 
         register(Router::new()).with_state(state)

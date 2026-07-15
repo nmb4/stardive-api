@@ -385,6 +385,7 @@ mod tests {
             api_key: None,
             max_upload_bytes: 1,
             max_snippet_chars: 20_000,
+            vapid_subject: "mailto:test@example.com".to_string(),
             modules: ModuleFlags {
                 health: true,
                 search: true,
@@ -392,6 +393,7 @@ mod tests {
                 render: true,
                 lostandfound: true,
                 orbit: true,
+                notifications: true,
                 installers: true,
                 eternal: true,
             },
@@ -425,6 +427,12 @@ mod tests {
             Arc::new(Vec::<ModuleDef>::new()),
             lostandfound::new_store(),
             orbit_store,
+            crate::modules::notifications::new_store(
+                temp.join("notification-data"),
+                "mailto:test@example.com".to_string(),
+            )
+            .await
+            .expect("notification store"),
         );
 
         register(Router::new())

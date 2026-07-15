@@ -42,6 +42,66 @@ pub struct HealthResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PushSubscriptionKeys {
+    pub p256dh: String,
+    pub auth: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationSubscriptionRequest {
+    pub endpoint: String,
+    pub keys: PushSubscriptionKeys,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expiration_time: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub device_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationSubscription {
+    pub id: String,
+    pub endpoint: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub device_name: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationSubscribeResponse {
+    pub subscription: NotificationSubscription,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationVapidResponse {
+    pub public_key: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationRequest {
+    pub title: String,
+    #[serde(default)]
+    pub body: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationDeliveryResponse {
+    pub id: String,
+    pub subscriptions: usize,
+    pub delivered: usize,
+    pub failed: usize,
+    pub removed: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchRequest {
     pub query: String,
     #[serde(skip_serializing_if = "Option::is_none")]
