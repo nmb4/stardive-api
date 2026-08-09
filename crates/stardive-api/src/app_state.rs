@@ -76,6 +76,7 @@ pub struct AppState {
     pub lostandfound_store: Arc<RwLock<LostAndFoundStore>>,
     pub orbit_store: Arc<OrbitStore>,
     pub notification_store: Arc<NotificationStore>,
+    pub http_client: reqwest::Client,
 }
 
 impl AppState {
@@ -98,6 +99,7 @@ impl AppState {
             lostandfound_store,
             orbit_store,
             notification_store,
+            http_client: reqwest::Client::new(),
         }
     }
 }

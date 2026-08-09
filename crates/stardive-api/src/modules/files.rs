@@ -386,6 +386,7 @@ mod tests {
             max_upload_bytes: 1,
             max_snippet_chars: 20_000,
             vapid_subject: "mailto:test@example.com".to_string(),
+            obscura_mcp_url: "http://127.0.0.1:8081/mcp".to_string(),
             modules: ModuleFlags {
                 health: true,
                 search: true,
@@ -396,6 +397,7 @@ mod tests {
                 notifications: true,
                 installers: true,
                 eternal: true,
+                obscura: true,
             },
         });
         let file_store = Arc::new(

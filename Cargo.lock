@@ -4674,6 +4674,7 @@ dependencies = [
  "http 1.4.0",
  "p256",
  "rand_core 0.6.4",
+ "reqwest",
  "serde",
  "serde_json",
  "sha2",

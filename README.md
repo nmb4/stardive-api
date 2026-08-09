@@ -84,6 +84,7 @@ cargo run -p stardive -- --help
 - `GET /installers/{name}`
 - `GET /eternal`
 - `GET /eternal/{name}`
+- `GET|POST|DELETE /obscura/mcp` (unauthenticated Streamable HTTP MCP proxy)
 
 `lostandfound` is mounted under `/v1` like every module, so the full URL for login is `/v1/lostandfound/auth/login`.
 
@@ -152,6 +153,18 @@ curl -X POST https://api.stardive.space/v1/notifications \
 
 The response reports how many subscriptions were delivered, failed, or removed because their push endpoint expired. `title` is required; `body`, `channel`, `url`, `icon`, and `tag` shape the system notification. Links must be relative or HTTPS.
 
+### Obscura MCP
+
+The Docker image starts Obscura's native HTTP MCP server on the container loopback interface and proxies it through Stardive at `/v1/obscura/mcp`. This route is intentionally exempt from `STARDIVE_API_KEY` authentication for quick testing.
+
+Connect an MCP client to:
+
+```text
+https://api.stardive.space/v1/obscura/mcp
+```
+
+The proxy preserves MCP session and streaming headers and supports the Streamable HTTP `GET`, `POST`, and `DELETE` methods. It does not use stdio. To use an externally managed Obscura process, set `STARDIVE_OBSCURA_MCP_URL` to its full `/mcp` URL.
+
 ## Configuration
 
 `stardive-api` environment variables:
@@ -160,11 +173,13 @@ The response reports how many subscriptions were delivered, failed, or removed b
 - `STARDIVE_LOG_DIR` (default `<STARDIVE_DATA_DIR>/logs`, daily-rotated debug logs)
 - `STARDIVE_INSTALLERS_DIR` (default `installers`)
 - `STARDIVE_ETERNAL_DIR` (default `eternal`)
-- `STARDIVE_API_KEY` (optional; when set, bearer auth is enforced except `/v1/health`)
+- `STARDIVE_API_KEY` (optional; when set, bearer auth is enforced except `/v1/health` and the test-only `/v1/obscura/mcp` route)
 - `STARDIVE_MAX_UPLOAD_BYTES` (default `1073741824`, used by Orbit script uploads; `/files` uploads are unbounded)
 - `STARDIVE_MAX_SNIPPET_CHARS` (default `20000`)
 - `STARDIVE_VAPID_SUBJECT` (default `mailto:admin@stardive.space`; set this to your own `mailto:` or HTTPS contact)
-- `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|LOSTANDFOUND|ORBIT|NOTIFICATIONS|INSTALLERS|ETERNAL` (default `true`)
+- `STARDIVE_OBSCURA_MCP_URL` (default `http://127.0.0.1:8081/mcp`)
+- `STARDIVE_OBSCURA_MCP_PORT` (container launcher port; default `8081`)
+- `STARDIVE_ENABLE_HEALTH|SEARCH|FILES|RENDER|LOSTANDFOUND|ORBIT|NOTIFICATIONS|INSTALLERS|ETERNAL|OBSCURA` (default `true`)
 
 Logging behavior:
 - request and response logs are emitted at `info` level

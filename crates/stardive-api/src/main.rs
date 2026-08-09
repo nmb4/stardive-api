@@ -77,6 +77,8 @@ async fn main() -> anyhow::Result<()> {
         notifications_enabled = config.modules.notifications,
         installers_enabled = config.modules.installers,
         eternal_enabled = config.modules.eternal,
+        obscura_enabled = config.modules.obscura,
+        obscura_mcp_url = %config.obscura_mcp_url,
         "startup configuration loaded"
     );
     info!(

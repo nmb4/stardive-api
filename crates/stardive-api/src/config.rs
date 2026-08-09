@@ -13,6 +13,7 @@ pub struct ModuleFlags {
     pub notifications: bool,
     pub installers: bool,
     pub eternal: bool,
+    pub obscura: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -26,6 +27,7 @@ pub struct ServerConfig {
     pub max_upload_bytes: u64,
     pub max_snippet_chars: usize,
     pub vapid_subject: String,
+    pub obscura_mcp_url: String,
     pub modules: ModuleFlags,
 }
 
@@ -74,7 +76,11 @@ impl ServerConfig {
             notifications: read_bool("STARDIVE_ENABLE_NOTIFICATIONS", true),
             installers: read_bool("STARDIVE_ENABLE_INSTALLERS", true),
             eternal: read_bool("STARDIVE_ENABLE_ETERNAL", true),
+            obscura: read_bool("STARDIVE_ENABLE_OBSCURA", true),
         };
+
+        let obscura_mcp_url = std::env::var("STARDIVE_OBSCURA_MCP_URL")
+            .unwrap_or_else(|_| "http://127.0.0.1:8081/mcp".to_string());
 
         let vapid_subject = std::env::var("STARDIVE_VAPID_SUBJECT")
             .unwrap_or_else(|_| "mailto:admin@stardive.space".to_string());
@@ -89,6 +95,7 @@ impl ServerConfig {
             max_upload_bytes,
             max_snippet_chars,
             vapid_subject,
+            obscura_mcp_url,
             modules,
         })
     }

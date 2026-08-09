@@ -19,7 +19,7 @@ pub async fn auth_middleware(
     };
 
     let path = request.uri().path();
-    if path == "/up" || path.ends_with("/health") {
+    if is_public_path(path) {
         return next.run(request).await;
     }
 
@@ -39,4 +39,24 @@ pub async fn auth_middleware(
     }
 
     next.run(request).await
+}
+
+fn is_public_path(path: &str) -> bool {
+    path == "/up"
+        || path.ends_with("/health")
+        || path == "/v1/obscura/mcp"
+        || path == "/obscura/mcp"
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_public_path;
+
+    #[test]
+    fn obscura_mcp_is_public_but_neighboring_routes_are_not() {
+        assert!(is_public_path("/v1/obscura/mcp"));
+        assert!(is_public_path("/obscura/mcp"));
+        assert!(!is_public_path("/v1/obscura"));
+        assert!(!is_public_path("/v1/obscura/mcp/admin"));
+    }
 }
